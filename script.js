@@ -1557,7 +1557,7 @@ cancelarSenha.onclick = () => {
 
 };
 
-salvarSenha.onclick = () => {
+salvarSenha.onclick = async () => {
 
     const senhaAtual =
         document.getElementById("senhaAtual").value;
@@ -1598,7 +1598,12 @@ salvarSenha.onclick = () => {
 
     await salvarSenhaFirebase(novaSenha);
 
-    SENHA = novaSenha;
+SENHA = novaSenha;
+
+localStorage.setItem(
+    "senhaFinanceiro",
+    novaSenha
+);
 
     alert(
         "Senha alterada com sucesso!"
@@ -1703,7 +1708,7 @@ async function inicializarSistema(){
     await carregarSenha();
 
     await carregarDadosFirebase();
-    
+
 
     atualizarFiltroMes();
 
