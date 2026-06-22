@@ -1,6 +1,4 @@
-let SENHA =
-    localStorage.getItem("senhaFinanceiro")
-    || "Flora2026";
+let SENHA = "Flora2026";
 
 // ==========================
 // DADOS
@@ -1598,10 +1596,7 @@ salvarSenha.onclick = () => {
 
     }
 
-    localStorage.setItem(
-        "senhaFinanceiro",
-        novaSenha
-    );
+    await salvarSenhaFirebase(novaSenha);
 
     SENHA = novaSenha;
 
@@ -1692,13 +1687,23 @@ async function carregarMetas(){
 
 }
 
+async function carregarSenha(){
+
+    SENHA =
+        await carregarSenhaFirebase();
+
+}
+
 // ==========================
 // INICIALIZAÇÃO
 // ==========================
 
 async function inicializarSistema(){
 
+    await carregarSenha();
+
     await carregarDadosFirebase();
+    
 
     atualizarFiltroMes();
 
