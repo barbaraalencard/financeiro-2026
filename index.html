@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📖 Financeiro 2026</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- LOGIN -->
+
+<div id="telaLogin">
+
+    <div class="login-box">
+
+        <h1>📖 Financeiro 2026</h1>
+
+        <p>
+            Digite sua senha para acessar
+        </p>
+
+        <input
+            type="password"
+            id="senhaLogin"
+            placeholder="Senha">
+
+        <button id="btnEntrar">
+            Entrar
+        </button>
+
+        <p id="erroLogin"></p>
+
+    </div>
+
+</div>
+
+<header>
+
+    <div id="app">
+    <h1>📖 Financeiro 2026</h1>
+
+    <p id="mesAtual">🌷
+</p>
+</header>
+
+<main>
+
+    <!-- HOME -->
+
+    <section id="pagina-home">
+
+        <section class="cards">
+
+            <div class="card receitas">
+                <h3>💰 Receitas</h3>
+                <span>R$ 0,00</span>
+            </div>
+
+            <div class="card despesas">
+                <h3>💸 Despesas</h3>
+                <span>R$ 0,00</span>
+            </div>
+
+            <div class="card saldo">
+                <h3>💵 Saldo</h3>
+                <span>R$ 0,00</span>
+            </div>
+
+            <div class="card parcelas">
+                <h3>📦 Parcelas</h3>
+                <span>0</span>
+            </div>
+
+        </section>
+
+        <section class="metas">
+
+    <div class="titulo-metas">
+
+        <h2>🎯 Metas Financeiras</h2>
+
+        <button id="btnNovaMeta">
+            ➕ Nova Meta
+        </button>
+
+    </div>
+
+   <div id="lista-metas"></div>
+
+</section>
+
+<section class="lancamentos">
+
+    <div class="filtro-mes">
+
+        <label for="filtroMes">
+            📅 Mês:
+        </label>
+
+        <select id="filtroMes">
+            <option value="todos">
+                Todos os meses
+            </option>
+        </select>
+
+    </div>
+
+    <h2>📝 Lançamentos Recentes</h2>
+
+            <div id="lista-lancamentos">
+                <p>Nenhum lançamento ainda.</p>
+            </div>
+
+        
+    </section>
+
+    </section>
+
+    <!-- DESPESAS -->
+
+<section id="pagina-despesas" style="display:none;">
+
+    <h2 class="titulo-aba">💸 Despesas</h2>
+
+    <div id="lista-despesas" class="grid-lancamentos"></div>
+
+</section>
+
+
+<!-- RECEITAS -->
+
+<section id="pagina-receitas" style="display:none;">
+
+    <h2 class="titulo-aba">💰 Receitas</h2>
+
+    <div id="lista-receitas" class="grid-lancamentos"></div>
+
+</section>
+
+
+<!-- PARCELAS -->
+
+<section id="pagina-parcelas" style="display:none;">
+
+    <h2 class="titulo-aba">📦 Parcelas</h2>
+
+    <div id="lista-parcelas" class="grid-lancamentos"></div>
+
+</section>
+
+
+<!-- CONFIGURAÇÕES -->
+
+<section id="pagina-config" style="display:none;">
+
+    <h2 class="titulo-aba">
+        ⚙️ Configurações
+    </h2>
+
+    <div class="configuracoes">
+
+        <button id="btnLimparDespesas" class="btn-config">
+            🗑 Limpar Despesas
+        </button>
+
+        <button id="btnLimparReceitas" class="btn-config">
+            🗑 Limpar Receitas
+        </button>
+
+        <button id="btnLimparMetas" class="btn-config">
+            🗑 Limpar Metas
+        </button>
+
+        <button id="btnDesfazer" class="btn-config">
+            ↩️ Desfazer última limpeza
+        </button>
+
+        <button id="btnExportar" class="btn-config">
+            📤 Exportar Backup
+        </button>
+
+        <button id="btnImportar" class="btn-config">
+            📥 Importar Backup
+        </button>
+
+        <input
+    type="file"
+    id="arquivoBackup"
+    accept=".json"
+    style="display:none;">
+
+        <button id="btnSair" class="btn-config">
+            🚪 Sair
+        </button>
+
+        <button id="btnTrocarSenha" class="btn-config">
+            🔑 Alterar Senha
+        </button>
+
+        <select id="temaSelect" class="btn-config">
+
+            <option value="claro">
+                🌷 Claro
+            </option>
+
+            <option value="escuro">
+                🌙 Escuro
+            </option>
+
+        </select>
+
+    </div>
+
+</section>
+
+</main>
+
+<nav class="menu">
+    <button id="btnHome">🏠</button>
+<button id="btnDespesas">💸</button>
+<button id="btnReceitas">💰</button>
+<button id="btnParcelas">📦</button>
+<button id="btnConfig">⚙️</button>
+</nav>
+
+<!-- BOTÃO RECEITA -->
+
+<button id="btnNovaReceita" class="fab-receita">
+    💰
+</button>
+
+<!-- BOTÃO DESPESA -->
+
+<button id="btnNovaDespesa" class="fab">
+    +
+</button>
+
+<!-- MODAL DESPESA -->
+
+<div id="modalDespesa" class="modal">
+
+    <div class="modal-content">
+
+        <h2>Nova Despesa</h2>
+
+        <input
+            type="text"
+            id="descricao"
+            placeholder="Descrição">
+
+        <input
+            type="number"
+            id="valor"
+            placeholder="Valor">
+
+        <select id="categoria">
+            <option>Alimentação</option>
+            <option>Saúde</option>
+            <option>Moradia</option>
+            <option>Compras</option>
+            <option>Lazer</option>
+            <option>Viagem</option>
+            <option>Assinaturas</option>
+            <option>Outros</option>
+        </select>
+
+        <label>
+            <input type="checkbox" id="parcelado">
+            Compra parcelada
+        </label>
+
+        <div id="campoParcelas" style="display:none;">
+
+            <input
+                type="number"
+                id="parcelaAtual"
+                placeholder="Parcela atual">
+
+            <input
+                type="number"
+                id="totalParcelas"
+                placeholder="Total de parcelas">
+
+        </div>
+
+        <input
+            type="date"
+            id="data">
+
+        <div class="acoes-modal">
+    <button id="cancelarDespesa" class="btn-cancelar">
+        Cancelar
+    </button>
+
+    <button id="salvarDespesa">
+        Salvar
+    </button>
+</div>
+
+    </div>
+
+</div>
+
+<!-- MODAL RECEITA -->
+
+<div id="modalReceita" class="modal">
+
+    <div class="modal-content">
+
+        <h2>Nova Receita</h2>
+
+        <input
+            type="text"
+            id="descricaoReceita"
+            placeholder="Descrição">
+
+        <input
+            type="number"
+            id="valorReceita"
+            placeholder="Valor">
+
+        <input
+            type="date"
+            id="dataReceita">
+
+        <div class="acoes-modal">
+    <button id="cancelarReceita" class="btn-cancelar">
+        Cancelar
+    </button>
+
+    <button id="salvarReceita">
+        Salvar
+    </button>
+</div>
+
+    </div>
+
+</div>
+
+<!-- MODAL META -->
+
+<div id="modalMeta" class="modal">
+
+    <div class="modal-content">
+
+        <h2>🎯 Nova Meta</h2>
+
+        <input
+            type="text"
+            id="nomeMeta"
+            placeholder="Nome da meta">
+
+        <input
+            type="number"
+            id="valorObjetivo"
+            placeholder="Valor objetivo">
+
+        <input
+            type="number"
+            id="valorAtualMeta"
+            placeholder="Valor já guardado">
+
+        <div class="acoes-modal">
+
+            <button
+                id="cancelarMeta"
+                class="btn-cancelar">
+                Cancelar
+            </button>
+
+            <button id="salvarMeta">
+                Salvar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- MODAL SENHA -->
+
+<div id="modalSenha" class="modal">
+
+    <div class="modal-content">
+
+        <h2>🔑 Alterar Senha</h2>
+
+        <input
+            type="password"
+            id="senhaAtual"
+            placeholder="Senha atual">
+
+        <input
+            type="password"
+            id="novaSenha"
+            placeholder="Nova senha">
+
+        <input
+            type="password"
+            id="confirmarSenha"
+            placeholder="Confirmar nova senha">
+
+        <div class="acoes-modal">
+
+            <button
+                id="cancelarSenha"
+                class="btn-cancelar">
+                Cancelar
+            </button>
+
+            <button id="salvarSenha">
+                Salvar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script type="module" src="firebase.js"></script>
+<script src="script.js" defer></script>
+
+<script type="module" src="firebase.js"></script>
+<script defer src="script.js"></script>
+
+        
+</div>
+</body>
+</html>
