@@ -164,48 +164,67 @@ console.log({
                 item.grupoParcelamento !== grupo
         );
 
-        const dataBase = new Date(data);
+        const [ano, mes, dia] =
+    data.split("-");
+
+const dataBase =
+    new Date(
+        Number(ano),
+        Number(mes) - 1,
+        Number(dia)
+    );
 
         for(
-            let parcela = 1;
-            parcela <= Number(totalParcelas);
-            parcela++
-        ){
+    let parcela = 1;
+    parcela <= Number(totalParcelas);
+    parcela++
+){
 
-            const novaData =
-                new Date(dataBase);
+    const novaData =
+        new Date(dataBase);
 
-            novaData.setMonth(
-                dataBase.getMonth() +
-                (parcela - 1)
-            );
+    novaData.setMonth(
+        dataBase.getMonth() +
+        (parcela - 1)
+    );
 
-            despesas.push({
+    const ano =
+        novaData.getFullYear();
 
-                descricao,
+    const mes =
+        String(
+            novaData.getMonth() + 1
+        ).padStart(2, "0");
 
-                valor,
+    const dia =
+        String(
+            novaData.getDate()
+        ).padStart(2, "0");
 
-                categoria,
+    despesas.push({
 
-                data:
-                    novaData
-                        .toISOString()
-                        .split("T")[0],
+        descricao,
 
-                ehParcelado: true,
+        valor,
 
-                parcelaAtual: parcela,
+        categoria,
 
-                totalParcelas,
+        data:
+            `${ano}-${mes}-${dia}`,
 
-                grupoParcelamento: grupo,
+        ehParcelado: true,
 
-                pago: false
+        parcelaAtual: parcela,
 
-            });
+        totalParcelas,
 
-        }
+        grupoParcelamento: grupo,
+
+        pago: false
+
+    });
+
+}
 
     } else {
 
@@ -245,7 +264,15 @@ console.log({
 
     if(ehParcelado){
 
-    const dataBase = new Date(data);
+    const [ano, mes, dia] =
+    data.split("-");
+
+const dataBase =
+    new Date(
+        Number(ano),
+        Number(mes) - 1,
+        Number(dia)
+    );
 
     const grupoParcelamento = Date.now();
 
