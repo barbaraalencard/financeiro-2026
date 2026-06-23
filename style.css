@@ -603,3 +603,34 @@ body.tema-escuro .modal-content{
 
     font-size:.9rem;
 }
+
+.btn-pago{
+    background:#f6e7a8;
+    color:#5a4b00;
+    border:none;
+    padding:10px 16px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:700;
+}
+
+.selo-pago{
+    display:inline-block;
+    margin-top:8px;
+    padding:4px 10px;
+    background:#d8f0d5;
+    color:#2d6a32;
+    border-radius:999px;
+    font-size:0.9rem;
+    font-weight:700;
+}
+
+.btn-desfazer{
+    background:#7ccf95;
+    color:white;
+    border:none;
+    padding:10px 16px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:700;
+}

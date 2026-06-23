@@ -65,7 +65,13 @@ const paginaConfig =
 // ==========================
 
 btnNovaDespesa.onclick = () => {
+
+    indiceDespesaEditando = null;
+
+    limparFormularioDespesa();
+
     modalDespesa.style.display = "flex";
+
 };
 
 btnNovaReceita.onclick = () => {
@@ -111,6 +117,7 @@ parcelado.addEventListener("change", () => {
 
 salvarDespesa.onclick = async () => {
 
+
     const descricao =
         document.getElementById("descricao").value;
 
@@ -124,44 +131,196 @@ salvarDespesa.onclick = async () => {
         document.getElementById("data").value;
 
     const ehParcelado =
-        document.getElementById("parcelado").checked;
+    document.getElementById("parcelado").checked;
 
-    const parcelaAtual =
-        document.getElementById("parcelaAtual").value || "";
+const parcelaAtual =
+    document.getElementById("parcelaAtual").value || "";
 
-    const totalParcelas =
-        document.getElementById("totalParcelas").value || "";
+const totalParcelas =
+    document.getElementById("totalParcelas").value || "";
+
+
+console.log({
+    indiceDespesaEditando,
+    ehParcelado,
+    parcelaAtual,
+    totalParcelas
+});
 
     if(indiceDespesaEditando !== null){
 
-    despesas[indiceDespesaEditando] = {
-        descricao,
-        valor,
-        categoria,
-        data,
-        ehParcelado,
-        parcelaAtual,
-        totalParcelas
-    };
+    const despesaOriginal =
+        despesas[indiceDespesaEditando];
+
+    // Se for parcelamento
+    if(despesaOriginal.grupoParcelamento){
+
+        const grupo =
+            despesaOriginal.grupoParcelamento;
+
+        // Remove todas as parcelas antigas
+        despesas = despesas.filter(
+            item =>
+                item.grupoParcelamento !== grupo
+        );
+
+        const dataBase = new Date(data);
+
+        for(
+            let parcela = 1;
+            parcela <= Number(totalParcelas);
+            parcela++
+        ){
+
+            const novaData =
+                new Date(dataBase);
+
+            novaData.setMonth(
+                dataBase.getMonth() +
+                (parcela - 1)
+            );
+
+            despesas.push({
+
+                descricao,
+
+                valor,
+
+                categoria,
+
+                data:
+                    novaData
+                        .toISOString()
+                        .split("T")[0],
+
+                ehParcelado: true,
+
+                parcelaAtual: parcela,
+
+                totalParcelas,
+
+                grupoParcelamento: grupo,
+
+                pago: false
+
+            });
+
+        }
+
+    } else {
+
+        despesas[indiceDespesaEditando] = {
+
+            descricao,
+
+            valor,
+
+            categoria,
+
+            data,
+
+            ehParcelado,
+
+            parcelaAtual,
+
+            totalParcelas,
+
+            grupoParcelamento:
+                despesas[indiceDespesaEditando]
+                .grupoParcelamento,
+
+            pago:
+                despesas[indiceDespesaEditando]
+                .pago
+
+        };
+
+    
 
     indiceDespesaEditando = null;
+
+}
+
+} else {
+
+    if(ehParcelado){
+
+    const dataBase = new Date(data);
+
+    const grupoParcelamento = Date.now();
+
+    for(
+        let parcela = Number(parcelaAtual);
+        parcela <= Number(totalParcelas);
+        parcela++
+    ){
+
+        const novaData = new Date(dataBase);
+
+        novaData.setMonth(
+            dataBase.getMonth() +
+            (parcela - Number(parcelaAtual))
+        );
+
+        despesas.push({
+
+            descricao,
+
+            valor,
+
+            categoria,
+
+            data:
+                novaData
+                    .toISOString()
+                    .split("T")[0],
+
+            ehParcelado: true,
+
+            parcelaAtual: parcela,
+
+            totalParcelas,
+
+            grupoParcelamento,
+
+            pago: false
+
+        });
+
+    }
+
 
 } else {
 
     despesas.push({
-        descricao,
-        valor,
-        categoria,
-        data,
-        ehParcelado,
-        parcelaAtual,
-        totalParcelas
-    });
+
+    descricao,
+
+    valor,
+
+    categoria,
+
+    data,
+
+    ehParcelado: false,
+
+    parcelaAtual: "",
+
+    totalParcelas: "",
+
+    grupoParcelamento: null,
+
+    pago: false
+
+});
 
 }
 
-    await salvarDespesasFirebase(despesas);
+}
 
+    
+    await salvarDespesasFirebase(despesas);
+    
     renderizar();
     atualizarFiltroMes();
     atualizarResumo();
@@ -172,6 +331,7 @@ salvarDespesa.onclick = async () => {
     limparFormularioDespesa();
 
     modalDespesa.style.display = "none";
+    
 
 };
 
@@ -321,21 +481,27 @@ lancamentosFiltrados.forEach(item => {
                     <br>
                     📅 ${formatarData(item.data)}
 
+                    ${item.pago ? `
+                        <br>
+                        <span class="selo-pago">
+                            ✅ Pago
+                    </span>
+` : ""}
+
                     <br><br>
 
-                
                     <button
-    class="btn-editar"
-    onclick="editarReceita(${item.indice})">
-    ✏️ Editar
-</button>
+                        class="btn-editar"
+                        onclick="editarReceita(${item.indice})">
+                        ✏️ Editar
+                    </button>
 
-<button
-    class="btn-excluir"
-    onclick="excluirReceita(${item.indice})">
-    🗑 Excluir
-</button>
-
+                    <button
+                        class="btn-excluir"
+                        onclick="excluirReceita(${item.indice})">
+                        🗑 Excluir
+                    </button>
+                
                 </div>
             `;
 
@@ -353,33 +519,46 @@ lancamentosFiltrados.forEach(item => {
             }
 
             lista.innerHTML += `
-                <div class="meta-financeira">
-                    💸 ${item.descricao}
-                    <br>
-                    R$ ${Number(item.valor).toLocaleString(
-                        "pt-BR",
-                        {
-                            minimumFractionDigits: 2
-                        }
-                    )}
+    <div class="meta">
+        💸 ${item.descricao}
+        <br>
 
-                    ${parcelaTexto}
+        R$ ${Number(item.valor).toLocaleString(
+            "pt-BR",
+            {
+                minimumFractionDigits: 2
+            }
+        )}
 
-                    <br>
-                    📅 ${formatarData(item.data)}
+        ${parcelaTexto}
 
-                    <br><br>
+        <br>
 
-                    <button
-    class="btn-editar"
-    onclick="editarDespesa(${item.indice})">
-    ✏️ Editar
-</button>
+        📅 ${formatarData(item.data)}
+
+        ${item.pago ? `
+            <br>
+            <strong>✅ Pago</strong>
+        ` : ""}
+
+        <br><br>
+
+        <button
+            class="btn-editar"
+            onclick="editarDespesa(${item.indice})">
+            ✏️ Editar
+        </button>
 
 <button
     class="btn-excluir"
     onclick="excluirDespesa(${item.indice})">
     🗑 Excluir
+</button>
+
+<button
+    class="${item.pago ? 'btn-desfazer' : 'btn-pago'}"
+    onclick="alternarPagamento(${item.indice})">
+    ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
 </button>
 
                 </div>
@@ -498,7 +677,9 @@ function atualizarResumo(){
         });
 
     const totalDespesas =
-        despesasFiltradas.reduce(
+    despesasFiltradas
+        .filter(item => !item.pago)
+        .reduce(
             (total, item) =>
                 total + Number(item.valor),
             0
@@ -597,6 +778,42 @@ async function excluirReceita(indice){
     renderizarDespesas();
     renderizarReceitas();
     renderizarParcelas();
+}
+
+async function excluirParcelamentoCompleto(indice){
+
+    const despesa = despesas[indice];
+
+    if(!despesa.grupoParcelamento){
+
+        alert("Esta despesa não pertence a um parcelamento.");
+
+        return;
+
+    }
+
+    if(
+        !confirm(
+            `Excluir todas as parcelas de "${despesa.descricao}"?`
+        )
+    ){
+        return;
+    }
+
+    despesas = despesas.filter(
+        item =>
+            item.grupoParcelamento !==
+            despesa.grupoParcelamento
+    );
+
+    await salvarDespesasFirebase(despesas);
+
+    renderizar();
+    renderizarDespesas();
+    renderizarParcelas();
+    atualizarResumo();
+    atualizarParcelas();
+
 }
 
 function formatarData(data){
@@ -929,6 +1146,8 @@ function editarDespesa(indice){
     indiceDespesaEditando = indice;
 
     modalDespesa.style.display = "flex";
+    console.log("EDITANDO:");
+    console.log(despesa);
 
 }
 
@@ -962,6 +1181,10 @@ function renderizarDespesas(){
     listaDespesas.innerHTML = "";
 
     despesas
+.map((item, indice) => ({
+    ...item,
+    indice
+}))
     .filter(item => {
 
         if(item.ehParcelado){
@@ -977,7 +1200,7 @@ function renderizarDespesas(){
     })
     .slice()
     .reverse()
-    .forEach((item, indice) => {
+    .forEach((item) => {
 
             listaDespesas.innerHTML += `
                 <div class="meta-financeira">
@@ -997,18 +1220,34 @@ function renderizarDespesas(){
 
                     📅 ${formatarData(item.data)}
 
+${item.pago ? `
+    <br>
+    <br>
+    <span class="selo-pago">
+        ✅ Pago
+    </span>
+` : ""}
+
+<br><br>
+
                     <br><br>
 
                     <button
                         class="btn-editar"
-                        onclick="editarDespesa(${despesas.length - 1 - indice})">
+                        onclick="editarDespesa(${item.indice})">
                         ✏️ Editar
                     </button>
 
                     <button
                         class="btn-excluir"
-                        onclick="excluirDespesa(${despesas.length - 1 - indice})">
+                        onclick="excluirDespesa(${item.indice})">
                         🗑 Excluir
+                    </button>
+
+                    <button
+                        class="${item.pago ? 'btn-desfazer' : 'btn-pago'}"
+                        onclick="alternarPagamento(${item.indice})">
+                        ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
                     </button>
 
                 </div>
@@ -1092,6 +1331,10 @@ function renderizarParcelas(){
     listaParcelas.innerHTML = "";
 
     despesas
+.map((item, indice) => ({
+    ...item,
+    indice
+}))
         .filter(item => {
 
             if(!item.ehParcelado){
@@ -1137,19 +1380,39 @@ function renderizarParcelas(){
 
                     📅 ${formatarData(item.data)}
 
+                    ${item.pago ? `
+    <br>
+    <br>
+    <span class="selo-pago">
+        ✅ Pago
+    </span>
+` : ""}
+
                     <br><br>
 
                     <button
                         class="btn-editar"
-                        onclick="editarDespesa(${despesas.length - 1 - indice})">
+                        onclick="editarDespesa(${item.indice})">
                         ✏️ Editar
                     </button>
 
                     <button
                         class="btn-excluir"
-                        onclick="excluirDespesa(${despesas.length - 1 - indice})">
+                        onclick="excluirDespesa(${item.indice})">
                         🗑 Excluir
                     </button>
+
+                    <button
+                        class="btn-excluir"
+                        onclick="excluirParcelamentoCompleto(${item.indice})">
+                        📦 Excluir Parcelas
+                    </button>
+
+                    <button
+    class="${item.pago ? 'btn-desfazer' : 'btn-pago'}"
+    onclick="alternarPagamento(${item.indice})">
+    ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
+</button>
 
                 </div>
             `;
@@ -1696,6 +1959,30 @@ async function carregarSenha(){
 
     SENHA =
         await carregarSenhaFirebase();
+
+}
+
+async function alternarPagamento(indice){
+
+    despesas[indice].pago =
+        !despesas[indice].pago;
+
+    await salvarDespesasFirebase(despesas);
+
+    atualizarResumo();
+
+    renderizar();
+    renderizarDespesas();
+    renderizarParcelas();
+
+    console.log(
+    "Indice recebido:",
+    indice
+);
+
+console.log(
+    despesas[indice]
+);
 
 }
 
