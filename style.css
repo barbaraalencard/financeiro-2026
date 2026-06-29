@@ -634,3 +634,65 @@ body.tema-escuro .modal-content{
     cursor:pointer;
     font-weight:700;
 }
+
+/* ==========================
+   BARRA DE PESQUISA
+========================== */
+
+.barra-pesquisa{
+
+    margin-bottom:20px;
+
+}
+
+.barra-pesquisa input{
+
+    width:100%;
+
+    padding:14px 18px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:white;
+
+    box-sizing:border-box;
+
+    font-size:16px;
+
+    font-family:"Nunito", sans-serif;
+
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+
+    transition:.2s;
+
+}
+
+.barra-pesquisa input:focus{
+
+    outline:none;
+
+    box-shadow:0 0 0 3px #d7c8ff;
+
+}
+
+#resultadoPesquisa{
+
+    margin-top:15px;
+
+}
+
+.resultado-pesquisa{
+
+    background:white;
+
+    padding:15px;
+
+    border-radius:12px;
+
+    margin-bottom:12px;
+
+    box-shadow:0 3px 8px rgba(0,0,0,.08);
+
+}

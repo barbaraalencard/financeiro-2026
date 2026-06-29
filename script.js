@@ -2013,6 +2013,112 @@ console.log(
 
 }
 
+const campoPesquisa =
+    document.getElementById("pesquisaLancamentos");
+
+const resultadoPesquisa =
+    document.getElementById("resultadoPesquisa");
+
+campoPesquisa.addEventListener("input", pesquisarLancamentos);
+
+function pesquisarLancamentos(){
+
+    const texto =
+        campoPesquisa.value
+            .toLowerCase()
+            .trim();
+
+    resultadoPesquisa.innerHTML = "";
+
+    if(texto === ""){
+        return;
+    }
+
+    const resultados = [];
+
+    despesas.forEach((item, indice)=>{
+
+        if(
+            item.descricao.toLowerCase().includes(texto)
+        ){
+console.log("Resultado encontrado:", indice, item.descricao);
+            resultados.push({
+
+                tipo:"despesa",
+                indice,
+                descricao:item.descricao,
+                valor:item.valor
+
+});
+
+        }
+
+    });
+
+    receitas.forEach((item, indice)=>{
+
+        if(
+            item.descricao.toLowerCase().includes(texto)
+        ){
+console.log("Resultado encontrado:", indice, item.descricao);
+            resultados.push({
+                tipo:"receita",
+                indice,
+                descricao:item.descricao,
+                valor:item.valor
+
+});
+
+        }
+
+    });
+
+    resultados.forEach(item=>{
+
+        resultadoPesquisa.innerHTML += `
+<div
+    class="resultado-pesquisa"
+    onclick="abrirResultado('${item.tipo}', ${item.indice})">
+
+    
+    <strong>
+        ${item.tipo == "despesa" ? "💸" : "💰"}
+        ${item.descricao}
+    </strong>
+
+    <br>
+
+    R$ ${Number(item.valor).toLocaleString(
+        "pt-BR",
+        {
+            minimumFractionDigits: 2
+        }
+    )}
+
+</div>
+`;
+    });
+
+}
+
+window.abrirResultado = function(tipo, indice){
+
+    console.log("Clique:", tipo, indice);
+
+    campoPesquisa.value = "";
+    resultadoPesquisa.innerHTML = "";
+
+    if(tipo === "despesa"){
+        editarDespesa(indice);
+        return;
+    }
+
+    editarReceita(indice);
+
+};
+
+
+
 // ==========================
 // INICIALIZAÇÃO
 // ==========================
