@@ -696,3 +696,18 @@ body.tema-escuro .modal-content{
     box-shadow:0 3px 8px rgba(0,0,0,.08);
 
 }
+
+.acoes-resultado-pesquisa{
+
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+
+}
+
+.acoes-resultado-pesquisa button{
+
+    margin-left:0;
+
+}

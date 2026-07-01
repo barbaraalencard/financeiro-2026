@@ -864,6 +864,7 @@ function atualizarTelas(){
     atualizarResumo();
     atualizarParcelas();
     atualizarTituloMes();
+    pesquisarLancamentos();
 
 }
 
@@ -956,6 +957,8 @@ if(filtroMes){
     atualizarTituloMes();
 
     renderizarParcelas();
+
+    pesquisarLancamentos();
 
 });
 
@@ -1959,19 +1962,25 @@ function pesquisarLancamentos(){
         return;
     }
 
+    const filtroSelecionado =
+        document.getElementById("filtroMes")?.value || "todos";
+
     const resultados = [];
 
     despesas.forEach((item, indice)=>{
 
         if(
-            item.descricao.toLowerCase().includes(texto)
+            String(item.descricao || "").toLowerCase().includes(texto) &&
+            (
+                filtroSelecionado === "todos" ||
+                obterMesAno(item.data) === filtroSelecionado
+            )
         ){
             resultados.push({
 
                 tipo:"despesa",
                 indice,
-                descricao:item.descricao,
-                valor:item.valor
+                ...item
 
 });
 
@@ -1982,13 +1991,16 @@ function pesquisarLancamentos(){
     receitas.forEach((item, indice)=>{
 
         if(
-            item.descricao.toLowerCase().includes(texto)
+            String(item.descricao || "").toLowerCase().includes(texto) &&
+            (
+                filtroSelecionado === "todos" ||
+                obterMesAno(item.data) === filtroSelecionado
+            )
         ){
             resultados.push({
                 tipo:"receita",
                 indice,
-                descricao:item.descricao,
-                valor:item.valor
+                ...item
 
 });
 
@@ -1996,47 +2008,143 @@ function pesquisarLancamentos(){
 
     });
 
+    resultados.sort(
+        (a, b) =>
+            String(b.data || "")
+                .localeCompare(String(a.data || ""))
+    );
+
+    if(resultados.length === 0){
+
+        resultadoPesquisa.innerHTML = `
+            <div class="resultado-pesquisa">
+                Nenhum lançamento encontrado neste filtro.
+            </div>
+        `;
+
+        return;
+
+    }
+
     resultados.forEach(item=>{
 
+        const valorFormatado =
+            Number(item.valor).toLocaleString(
+                "pt-BR",
+                {
+                    style:"currency",
+                    currency:"BRL"
+                }
+            );
+
+        const parcelaTexto =
+            item.tipo === "despesa" &&
+            item.ehParcelado &&
+            item.parcelaAtual &&
+            item.totalParcelas
+                ? `<br>📦 Parcela ${item.parcelaAtual}/${item.totalParcelas}`
+                : "";
+
+        const categoriaTexto =
+            item.tipo === "despesa" && item.categoria
+                ? `<br>🏷 ${item.categoria}`
+                : "";
+
+        const pagoTexto =
+            item.tipo === "despesa" && item.pago
+                ? `
+                    <br><br>
+                    <span class="selo-pago">
+                        ✅ Pago
+                    </span>
+                `
+                : "";
+
+        const botoesDespesa =
+            item.tipo === "despesa"
+                ? `
+                    <button
+                        class="btn-editar"
+                        onclick="editarDespesa(${item.indice})">
+                        ✏️ Editar
+                    </button>
+
+                    <button
+                        class="btn-excluir"
+                        onclick="excluirDespesa(${item.indice})">
+                        🗑 Excluir
+                    </button>
+
+                    <button
+                        class="${item.pago ? 'btn-desfazer' : 'btn-pago'}"
+                        onclick="alternarPagamento(${item.indice})">
+                        ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
+                    </button>
+                `
+                : "";
+
+        const botaoParcelamento =
+            item.tipo === "despesa" && item.grupoParcelamento
+                ? `
+                    <button
+                        class="btn-excluir"
+                        onclick="excluirParcelamentoCompleto(${item.indice})">
+                        📦 Excluir Parcelas
+                    </button>
+                `
+                : "";
+
+        const botoesReceita =
+            item.tipo === "receita"
+                ? `
+                    <button
+                        class="btn-editar"
+                        onclick="editarReceita(${item.indice})">
+                        ✏️ Editar
+                    </button>
+
+                    <button
+                        class="btn-excluir"
+                        onclick="excluirReceita(${item.indice})">
+                        🗑 Excluir
+                    </button>
+                `
+                : "";
+
         resultadoPesquisa.innerHTML += `
-<div
-    class="resultado-pesquisa"
-    onclick="abrirResultado('${item.tipo}', ${item.indice})">
+<div class="resultado-pesquisa">
 
     
     <strong>
         ${item.tipo == "despesa" ? "💸" : "💰"}
-        ${item.descricao}
+        ${item.descricao || "Sem descrição"}
     </strong>
 
     <br>
 
-    R$ ${Number(item.valor).toLocaleString(
-        "pt-BR",
-        {
-            minimumFractionDigits: 2
-        }
-    )}
+    ${valorFormatado}
+
+    ${categoriaTexto}
+
+    ${parcelaTexto}
+
+    <br>
+
+    📅 ${formatarData(item.data)}
+
+    ${pagoTexto}
+
+    <div class="acoes-resultado-pesquisa">
+        ${botoesDespesa}
+        ${botaoParcelamento}
+        ${botoesReceita}
+    </div>
 
 </div>
 `;
     });
 
 }
-
-window.abrirResultado = function(tipo, indice){
-
-    campoPesquisa.value = "";
-    resultadoPesquisa.innerHTML = "";
-
-    if(tipo === "despesa"){
-        editarDespesa(indice);
-        return;
-    }
-
-    editarReceita(indice);
-
-};
 
 
 
