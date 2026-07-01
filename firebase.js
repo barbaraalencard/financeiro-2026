@@ -46,7 +46,7 @@ window.salvarMetasFirebase = async function(metas){
     await setDoc(
         doc(db, "usuarios", "babi"),
         {
-            metas: metas
+            metas: limparUndefined(metas)
         },
         {
             merge: true
@@ -81,7 +81,7 @@ window.salvarDespesasFirebase = async function(despesas){
     await setDoc(
         doc(db, "usuarios", "babi"),
         {
-            despesas: despesas
+            despesas: limparUndefined(despesas)
         },
         {
             merge: true
@@ -116,7 +116,7 @@ window.salvarReceitasFirebase = async function(receitas){
     await setDoc(
         doc(db, "usuarios", "babi"),
         {
-            receitas: receitas
+            receitas: limparUndefined(receitas)
         },
         {
             merge: true

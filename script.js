@@ -261,12 +261,10 @@ const dataBase =
             totalParcelas,
 
             grupoParcelamento:
-                despesas[indiceDespesaEditando]
-                .grupoParcelamento,
+    despesas[indiceDespesaEditando].grupoParcelamento || null,
 
-            pago:
-                despesas[indiceDespesaEditando]
-                .pago
+pago:
+    despesas[indiceDespesaEditando].pago || false
 
         };
 
@@ -314,9 +312,7 @@ const dataBase =
             categoria,
 
             data:
-                novaData
-                    .toISOString()
-                    .split("T")[0],
+    `${novaData.getFullYear()}-${String(novaData.getMonth() + 1).padStart(2, "0")}-${String(novaData.getDate()).padStart(2, "0")}`,
 
             ehParcelado: true,
 
@@ -866,6 +862,12 @@ function atualizarTelas(){
     atualizarTituloMes();
     pesquisarLancamentos();
 
+}
+
+function limparUndefined(obj){
+    return JSON.parse(
+        JSON.stringify(obj)
+    );
 }
 
 async function salvarTudoFirebase(){
