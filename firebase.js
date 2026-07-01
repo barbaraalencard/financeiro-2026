@@ -142,40 +142,6 @@ window.carregarReceitasFirebase = async function(){
 
 };
 
-// ==========================
-// SENHA
-// ==========================
-
-window.salvarSenhaFirebase = async function(senha){
-
-    await setDoc(
-        doc(db, "usuarios", "babi"),
-        {
-            senha: senha
-        },
-        {
-            merge: true
-        }
-    );
-
-};
-
-window.carregarSenhaFirebase = async function(){
-
-    const documento =
-        await getDoc(
-            doc(db, "usuarios", "babi")
-        );
-
-    if(documento.exists()){
-
-        return documento.data().senha || "Flora2026";
-
-    }
-
-    return "Flora2026";
-
-};
 
 // ==========================
 // SENHA

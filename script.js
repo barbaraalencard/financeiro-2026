@@ -75,6 +75,11 @@ btnNovaDespesa.onclick = () => {
 };
 
 btnNovaReceita.onclick = () => {
+
+    indiceReceitaEditando = null;
+
+    limparFormularioReceita();
+
     modalReceita.style.display = "flex";
 };
 
@@ -119,10 +124,10 @@ salvarDespesa.onclick = async () => {
 
 
     const descricao =
-        document.getElementById("descricao").value;
+        document.getElementById("descricao").value.trim();
 
     const valor =
-        document.getElementById("valor").value;
+        Number(document.getElementById("valor").value);
 
     const categoria =
         document.getElementById("categoria").value;
@@ -137,15 +142,26 @@ const parcelaAtual =
     document.getElementById("parcelaAtual").value || "";
 
 const totalParcelas =
-    document.getElementById("totalParcelas").value || "";
+    Number(document.getElementById("totalParcelas").value) || "";
 
+    if(!descricao || !valor || valor <= 0 || !data){
+        alert("Preencha descrição, valor e data da despesa.");
+        return;
+    }
 
-console.log({
-    indiceDespesaEditando,
-    ehParcelado,
-    parcelaAtual,
-    totalParcelas
-});
+    if(ehParcelado){
+
+        if(
+            !parcelaAtual ||
+            !totalParcelas ||
+            Number(parcelaAtual) < 1 ||
+            Number(totalParcelas) < Number(parcelaAtual)
+        ){
+            alert("Informe uma parcela atual válida e o total de parcelas.");
+            return;
+        }
+
+    }
 
     if(indiceDespesaEditando !== null){
 
@@ -346,15 +362,11 @@ const dataBase =
 }
 
     
+    indiceDespesaEditando = null;
+
     await salvarDespesasFirebase(despesas);
     
-    renderizar();
-    atualizarFiltroMes();
-    atualizarResumo();
-    atualizarParcelas();
-    renderizarDespesas();
-    renderizarReceitas();
-    renderizarParcelas();
+    atualizarTelas();
     limparFormularioDespesa();
 
     modalDespesa.style.display = "none";
@@ -370,13 +382,18 @@ const dataBase =
 salvarReceita.onclick = async () => {
 
     const descricao =
-        document.getElementById("descricaoReceita").value;
+        document.getElementById("descricaoReceita").value.trim();
 
     const valor =
-        document.getElementById("valorReceita").value;
+        Number(document.getElementById("valorReceita").value);
 
     const data =
         document.getElementById("dataReceita").value;
+
+    if(!descricao || !valor || valor <= 0 || !data){
+        alert("Preencha descrição, valor e data da receita.");
+        return;
+    }
 
     if(indiceReceitaEditando !== null){
 
@@ -400,12 +417,8 @@ salvarReceita.onclick = async () => {
 
     await salvarReceitasFirebase(receitas);
 
-    renderizar();
-    atualizarResumo();
+    atualizarTelas();
     limparFormularioReceita();
-    renderizarDespesas();
-    renderizarReceitas();
-    renderizarParcelas();
 
     modalReceita.style.display = "none";
 
@@ -781,12 +794,7 @@ async function excluirDespesa(indice){
 
     await salvarDespesasFirebase(despesas);
 
-    renderizar();
-    atualizarResumo();
-    atualizarParcelas();
-    renderizarDespesas();
-    renderizarReceitas();
-    renderizarParcelas();
+    atualizarTelas();
 
 }
 
@@ -800,11 +808,7 @@ async function excluirReceita(indice){
 
     await salvarReceitasFirebase(receitas);
 
-    renderizar();
-    atualizarResumo();
-    renderizarDespesas();
-    renderizarReceitas();
-    renderizarParcelas();
+    atualizarTelas();
 }
 
 async function excluirParcelamentoCompleto(indice){
@@ -835,11 +839,7 @@ async function excluirParcelamentoCompleto(indice){
 
     await salvarDespesasFirebase(despesas);
 
-    renderizar();
-    renderizarDespesas();
-    renderizarParcelas();
-    atualizarResumo();
-    atualizarParcelas();
+    atualizarTelas();
 
 }
 
@@ -850,6 +850,30 @@ function formatarData(data){
     const partes = data.split("-");
 
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
+
+}
+
+function atualizarTelas(){
+
+    atualizarFiltroMes();
+    renderizar();
+    renderizarDespesas();
+    renderizarReceitas();
+    renderizarParcelas();
+    renderizarMetas();
+    atualizarResumo();
+    atualizarParcelas();
+    atualizarTituloMes();
+
+}
+
+async function salvarTudoFirebase(){
+
+    await Promise.all([
+        salvarDespesasFirebase(despesas),
+        salvarReceitasFirebase(receitas),
+        salvarMetasFirebase(metas)
+    ]);
 
 }
 
@@ -998,7 +1022,7 @@ cancelarMeta.onclick = () => {
 salvarMeta.onclick = async () => {
 
     const nome =
-        document.getElementById("nomeMeta").value;
+        document.getElementById("nomeMeta").value.trim();
 
     const objetivo =
         Number(
@@ -1009,6 +1033,11 @@ salvarMeta.onclick = async () => {
         Number(
             document.getElementById("valorAtualMeta").value
         );
+
+    if(!nome || !objetivo || objetivo <= 0 || atual < 0){
+        alert("Preencha nome, objetivo e valor guardado da meta.");
+        return;
+    }
 
     if(indiceMetaEditando !== null){
 
@@ -1032,9 +1061,7 @@ salvarMeta.onclick = async () => {
 
     await salvarMetasFirebase(metas);
 
-renderizarMetas();
-
-console.log("Meta salva!");
+atualizarTelas();
 
     modalMeta.style.display = "none";
 
@@ -1057,7 +1084,9 @@ function renderizarMetas(){
 
         const porcentagem =
             Math.min(
-                (meta.atual / meta.objetivo) * 100,
+                meta.objetivo > 0
+                    ? (meta.atual / meta.objetivo) * 100
+                    : 0,
                 100
             );
 
@@ -1125,8 +1154,6 @@ function editarMeta(indice){
 
     const meta = metas[indice];
 
-    console.log(meta);
-
     document.getElementById("nomeMeta").value =
         meta.nome;
 
@@ -1173,8 +1200,6 @@ function editarDespesa(indice){
     indiceDespesaEditando = indice;
 
     modalDespesa.style.display = "flex";
-    console.log("EDITANDO:");
-    console.log(despesa);
 
 }
 
@@ -1295,6 +1320,10 @@ function renderizarReceitas(){
     listaReceitas.innerHTML = "";
 
     receitas
+        .map((item, indice) => ({
+            ...item,
+            indice
+        }))
         .filter(item => {
 
             if(filtroSelecionado === "todos"){
@@ -1306,7 +1335,7 @@ function renderizarReceitas(){
         })
         .slice()
         .reverse()
-        .forEach((item, indice) => {
+        .forEach((item) => {
 
             listaReceitas.innerHTML += `
                 <div class="meta-financeira">
@@ -1330,13 +1359,13 @@ function renderizarReceitas(){
 
                     <button
                         class="btn-editar"
-                        onclick="editarReceita(${receitas.length - 1 - indice})">
+                        onclick="editarReceita(${item.indice})">
                         ✏️ Editar
                     </button>
 
                     <button
                         class="btn-excluir"
-                        onclick="excluirReceita(${receitas.length - 1 - indice})">
+                        onclick="excluirReceita(${item.indice})">
                         🗑 Excluir
                     </button>
 
@@ -1459,7 +1488,7 @@ function renderizarParcelas(){
 }
 
 document.getElementById("btnLimparDespesas")
-.onclick = () => {
+.onclick = async () => {
 
     if(!confirm(
         "Deseja apagar TODAS as despesas?"
@@ -1475,21 +1504,14 @@ document.getElementById("btnLimparDespesas")
 
     despesas = [];
 
-    localStorage.setItem(
-        "despesas",
-        JSON.stringify(despesas)
-    );
+    await salvarDespesasFirebase(despesas);
 
-    renderizar();
-    renderizarDespesas();
-    renderizarParcelas();
-    atualizarResumo();
-    atualizarParcelas();
+    atualizarTelas();
 
 };
 
 document.getElementById("btnLimparReceitas")
-.onclick = () => {
+.onclick = async () => {
 
     if(!confirm(
         "Deseja apagar TODAS as receitas?"
@@ -1505,19 +1527,14 @@ document.getElementById("btnLimparReceitas")
 
     receitas = [];
 
-    localStorage.setItem(
-        "receitas",
-        JSON.stringify(receitas)
-    );
+    await salvarReceitasFirebase(receitas);
 
-    renderizar();
-    renderizarReceitas();
-    atualizarResumo();
+    atualizarTelas();
 
 };
 
 document.getElementById("btnLimparMetas")
-.onclick = () => {
+.onclick = async () => {
 
     if(!confirm(
         "Deseja apagar TODAS as metas?"
@@ -1533,17 +1550,14 @@ document.getElementById("btnLimparMetas")
 
     metas = [];
 
-    localStorage.setItem(
-        "metas",
-        JSON.stringify(metas)
-    );
+    await salvarMetasFirebase(metas);
 
-    renderizarMetas();
+    atualizarTelas();
 
 };
 
 document.getElementById("btnDesfazer")
-.onclick = () => {
+.onclick = async () => {
 
     if(!ultimoBackup){
         alert("Nenhuma limpeza para desfazer.");
@@ -1554,29 +1568,9 @@ document.getElementById("btnDesfazer")
     receitas = ultimoBackup.receitas;
     metas = ultimoBackup.metas;
 
-    localStorage.setItem(
-        "despesas",
-        JSON.stringify(despesas)
-    );
+    await salvarTudoFirebase();
 
-    localStorage.setItem(
-        "receitas",
-        JSON.stringify(receitas)
-    );
-
-    localStorage.setItem(
-        "metas",
-        JSON.stringify(metas)
-    );
-
-    renderizar();
-    renderizarDespesas();
-    renderizarReceitas();
-    renderizarParcelas();
-    renderizarMetas();
-
-    atualizarResumo();
-    atualizarParcelas();
+    atualizarTelas();
 
     alert("Dados restaurados com sucesso!");
 
@@ -1667,7 +1661,7 @@ document.getElementById("arquivoBackup")
     const leitor =
         new FileReader();
 
-    leitor.onload = (e) => {
+    leitor.onload = async (e) => {
 
         try{
 
@@ -1699,38 +1693,9 @@ document.getElementById("arquivoBackup")
             metas =
                 backup.metas;
 
-            localStorage.setItem(
-                "despesas",
-                JSON.stringify(despesas)
-            );
+            await salvarTudoFirebase();
 
-            localStorage.setItem(
-                "receitas",
-                JSON.stringify(receitas)
-            );
-
-            localStorage.setItem(
-                "metas",
-                JSON.stringify(metas)
-            );
-
-            atualizarFiltroMes();
-
-            renderizar();
-
-            renderizarDespesas();
-
-            renderizarReceitas();
-
-            renderizarParcelas();
-
-            renderizarMetas();
-
-            atualizarResumo();
-
-            atualizarParcelas();
-
-            atualizarTituloMes();
+            atualizarTelas();
 
             alert(
                 "Backup importado com sucesso!"
@@ -1907,37 +1872,6 @@ localStorage.setItem(
 
 };
 
-async function testarFirebase(){
-
-    const referencia =
-        doc(
-            db,
-            "usuarios",
-            "babi"
-        );
-
-    await setDoc(
-        referencia,
-        {
-            teste:
-                "Funcionando!"
-        },
-        {
-            merge:true
-        }
-    );
-
-    console.log(
-        "Firebase conectado!"
-    );
-
-}
-
-setTimeout(
-    testarFirebase,
-    2000
-);
-
 async function carregarDadosFirebase(){
 
     try{
@@ -2002,15 +1936,6 @@ async function alternarPagamento(indice){
     renderizarDespesas();
     renderizarParcelas();
 
-    console.log(
-    "Indice recebido:",
-    indice
-);
-
-console.log(
-    despesas[indice]
-);
-
 }
 
 const campoPesquisa =
@@ -2041,7 +1966,6 @@ function pesquisarLancamentos(){
         if(
             item.descricao.toLowerCase().includes(texto)
         ){
-console.log("Resultado encontrado:", indice, item.descricao);
             resultados.push({
 
                 tipo:"despesa",
@@ -2060,7 +1984,6 @@ console.log("Resultado encontrado:", indice, item.descricao);
         if(
             item.descricao.toLowerCase().includes(texto)
         ){
-console.log("Resultado encontrado:", indice, item.descricao);
             resultados.push({
                 tipo:"receita",
                 indice,
@@ -2102,8 +2025,6 @@ console.log("Resultado encontrado:", indice, item.descricao);
 }
 
 window.abrirResultado = function(tipo, indice){
-
-    console.log("Clique:", tipo, indice);
 
     campoPesquisa.value = "";
     resultadoPesquisa.innerHTML = "";
