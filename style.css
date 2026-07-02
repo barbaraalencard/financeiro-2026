@@ -711,3 +711,87 @@ body.tema-escuro .modal-content{
     margin-left:0;
 
 }
+
+.filtro-mes{
+
+    display:flex;
+    align-items:center;
+    gap:20px;
+    flex-wrap:wrap;
+
+}
+
+/* Barra dos filtros */
+
+.barra-filtros{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:28px;
+
+    margin:25px 0;
+
+    flex-wrap:wrap;
+
+}
+
+/* Cada filtro */
+
+.filtro-mes,
+.filtro-status{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+/* Texto "Mês" e "Status" */
+
+.filtro-mes label,
+.filtro-status label{
+
+    font-family:'Nunito',sans-serif;
+
+    font-size:1.5rem;
+
+    font-weight:700;
+
+    color:#5b524d;
+
+    white-space:nowrap;
+
+}
+
+/* Selects */
+
+.filtro-mes select,
+.filtro-status select{
+
+    padding:10px 16px;
+
+    height:48px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:#fff;
+
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+
+    font-family:'Nunito',sans-serif;
+
+    font-size:.95rem;
+
+    font-weight:600;
+
+    color:#4b4b4b;
+
+    cursor:pointer;
+
+}

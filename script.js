@@ -5,15 +5,11 @@ let SENHA = "Flora2026";
 // ==========================
 
 let despesas = [];
-
 let receitas = [];
-
 let metas = [];
 
 let indiceMetaEditando = null;
-
 let indiceDespesaEditando = null;
-
 let indiceReceitaEditando = null;
 
 let ultimoBackup = null;
@@ -81,14 +77,19 @@ btnNovaReceita.onclick = () => {
     limparFormularioReceita();
 
     modalReceita.style.display = "flex";
+
 };
 
 cancelarDespesa.onclick = () => {
+
     modalDespesa.style.display = "none";
+
 };
 
 cancelarReceita.onclick = () => {
+
     modalReceita.style.display = "none";
+
 };
 
 window.onclick = (event) => {
@@ -117,11 +118,38 @@ parcelado.addEventListener("change", () => {
 
 
 // ==========================
+// FUNÇÕES DE DATA
+// ==========================
+
+function criarDataLocal(data){
+
+    const [ano, mes, dia] =
+        data.split("-");
+
+    return new Date(
+        Number(ano),
+        Number(mes) - 1,
+        Number(dia)
+    );
+
+}
+
+function formatarDataISO(data){
+
+    return `${data.getFullYear()}-${String(
+        data.getMonth() + 1
+    ).padStart(2, "0")}-${String(
+        data.getDate()
+    ).padStart(2, "0")}`;
+
+}
+
+
+// ==========================
 // SALVAR DESPESA
 // ==========================
 
 salvarDespesa.onclick = async () => {
-
 
     const descricao =
         document.getElementById("descricao").value.trim();
@@ -136,17 +164,21 @@ salvarDespesa.onclick = async () => {
         document.getElementById("data").value;
 
     const ehParcelado =
-    document.getElementById("parcelado").checked;
+        document.getElementById("parcelado").checked;
 
-const parcelaAtual =
-    document.getElementById("parcelaAtual").value || "";
+    const parcelaAtual =
+        document.getElementById("parcelaAtual").value || "";
 
-const totalParcelas =
-    Number(document.getElementById("totalParcelas").value) || "";
+    const totalParcelas =
+        Number(
+            document.getElementById("totalParcelas").value
+        ) || "";
 
     if(!descricao || !valor || valor <= 0 || !data){
+
         alert("Preencha descrição, valor e data da despesa.");
         return;
+
     }
 
     if(ehParcelado){
@@ -157,219 +189,179 @@ const totalParcelas =
             Number(parcelaAtual) < 1 ||
             Number(totalParcelas) < Number(parcelaAtual)
         ){
+
             alert("Informe uma parcela atual válida e o total de parcelas.");
             return;
+
         }
 
     }
 
     if(indiceDespesaEditando !== null){
 
-    const despesaOriginal =
-        despesas[indiceDespesaEditando];
+        const despesaOriginal =
+            despesas[indiceDespesaEditando];
 
-    // Se for parcelamento
-    if(despesaOriginal.grupoParcelamento){
+        if(despesaOriginal.grupoParcelamento){
 
-        const grupo =
-            despesaOriginal.grupoParcelamento;
+            const grupo =
+                despesaOriginal.grupoParcelamento;
 
-        // Remove todas as parcelas antigas
-        despesas = despesas.filter(
-            item =>
-                item.grupoParcelamento !== grupo
-        );
+            despesas = despesas.filter(
+                item =>
+                    item.grupoParcelamento !== grupo
+            );
 
-        const [ano, mes, dia] =
-    data.split("-");
+            const dataBase =
+                criarDataLocal(data);
 
-const dataBase =
-    new Date(
-        Number(ano),
-        Number(mes) - 1,
-        Number(dia)
-    );
+            for(
+                let parcela = 1;
+                parcela <= Number(totalParcelas);
+                parcela++
+            ){
 
-        for(
-    let parcela = 1;
-    parcela <= Number(totalParcelas);
-    parcela++
-){
+                const novaData =
+                    new Date(dataBase);
 
-    const novaData =
-        new Date(dataBase);
+                novaData.setMonth(
+                    dataBase.getMonth() +
+                    (parcela - 1)
+                );
 
-    novaData.setMonth(
-        dataBase.getMonth() +
-        (parcela - 1)
-    );
+                despesas.push({
 
-    const ano =
-        novaData.getFullYear();
+                    descricao,
+                    valor,
+                    categoria,
 
-    const mes =
-        String(
-            novaData.getMonth() + 1
-        ).padStart(2, "0");
+                    data:
+                        formatarDataISO(novaData),
 
-    const dia =
-        String(
-            novaData.getDate()
-        ).padStart(2, "0");
+                    ehParcelado: true,
 
-    despesas.push({
+                    parcelaAtual: parcela,
 
-        descricao,
+                    totalParcelas,
 
-        valor,
+                    grupoParcelamento: grupo,
 
-        categoria,
+                    pago: false
 
-        data:
-            `${ano}-${mes}-${dia}`,
+                });
 
-        ehParcelado: true,
+            }
 
-        parcelaAtual: parcela,
+        } else {
 
-        totalParcelas,
+            despesas[indiceDespesaEditando] = {
 
-        grupoParcelamento: grupo,
+                descricao,
+                valor,
+                categoria,
+                data,
 
-        pago: false
+                ehParcelado,
 
-    });
+                parcelaAtual:
+                    ehParcelado ? parcelaAtual : "",
 
-}
+                totalParcelas:
+                    ehParcelado ? totalParcelas : "",
+
+                grupoParcelamento:
+                    despesas[indiceDespesaEditando].grupoParcelamento || null,
+
+                pago:
+                    despesas[indiceDespesaEditando].pago || false
+
+            };
+
+        }
 
     } else {
 
-        despesas[indiceDespesaEditando] = {
+        if(ehParcelado){
 
-            descricao,
+            const dataBase =
+                criarDataLocal(data);
 
-            valor,
+            const grupoParcelamento =
+                Date.now();
 
-            categoria,
+            for(
+                let parcela = Number(parcelaAtual);
+                parcela <= Number(totalParcelas);
+                parcela++
+            ){
 
-            data,
+                const novaData =
+                    new Date(dataBase);
 
-            ehParcelado,
+                novaData.setMonth(
+                    dataBase.getMonth() +
+                    (parcela - Number(parcelaAtual))
+                );
 
-            parcelaAtual,
+                despesas.push({
 
-            totalParcelas,
+                    descricao,
+                    valor,
+                    categoria,
 
-            grupoParcelamento:
-    despesas[indiceDespesaEditando].grupoParcelamento || null,
+                    data:
+                        formatarDataISO(novaData),
 
-pago:
-    despesas[indiceDespesaEditando].pago || false
+                    ehParcelado: true,
 
-        };
+                    parcelaAtual: parcela,
 
-    
+                    totalParcelas,
 
-    indiceDespesaEditando = null;
+                    grupoParcelamento,
 
-}
+                    pago: false
 
-} else {
+                });
 
-    if(ehParcelado){
+            }
 
-    const [ano, mes, dia] =
-    data.split("-");
+        } else {
 
-const dataBase =
-    new Date(
-        Number(ano),
-        Number(mes) - 1,
-        Number(dia)
-    );
+            despesas.push({
 
-    const grupoParcelamento = Date.now();
+                descricao,
+                valor,
+                categoria,
+                data,
 
-    for(
-        let parcela = Number(parcelaAtual);
-        parcela <= Number(totalParcelas);
-        parcela++
-    ){
+                ehParcelado: false,
 
-        const novaData = new Date(dataBase);
+                parcelaAtual: "",
 
-        novaData.setMonth(
-            dataBase.getMonth() +
-            (parcela - Number(parcelaAtual))
-        );
+                totalParcelas: "",
 
-        despesas.push({
+                grupoParcelamento: null,
 
-            descricao,
+                pago: false
 
-            valor,
+            });
 
-            categoria,
-
-            data:
-    `${novaData.getFullYear()}-${String(novaData.getMonth() + 1).padStart(2, "0")}-${String(novaData.getDate()).padStart(2, "0")}`,
-
-            ehParcelado: true,
-
-            parcelaAtual: parcela,
-
-            totalParcelas,
-
-            grupoParcelamento,
-
-            pago: false
-
-        });
+        }
 
     }
 
-
-} else {
-
-    despesas.push({
-
-    descricao,
-
-    valor,
-
-    categoria,
-
-    data,
-
-    ehParcelado: false,
-
-    parcelaAtual: "",
-
-    totalParcelas: "",
-
-    grupoParcelamento: null,
-
-    pago: false
-
-});
-
-}
-
-}
-
-    
     indiceDespesaEditando = null;
 
     await salvarDespesasFirebase(despesas);
-    
+
     atualizarTelas();
+
     limparFormularioDespesa();
 
     modalDespesa.style.display = "none";
-    
 
 };
-
 
 // ==========================
 // SALVAR RECEITA
@@ -387,33 +379,36 @@ salvarReceita.onclick = async () => {
         document.getElementById("dataReceita").value;
 
     if(!descricao || !valor || valor <= 0 || !data){
+
         alert("Preencha descrição, valor e data da receita.");
         return;
+
     }
 
     if(indiceReceitaEditando !== null){
 
-    receitas[indiceReceitaEditando] = {
-        descricao,
-        valor,
-        data
-    };
+        receitas[indiceReceitaEditando] = {
+            descricao,
+            valor,
+            data
+        };
 
-    indiceReceitaEditando = null;
+        indiceReceitaEditando = null;
 
-} else {
+    } else {
 
-    receitas.push({
-        descricao,
-        valor,
-        data
-    });
+        receitas.push({
+            descricao,
+            valor,
+            data
+        });
 
-}
+    }
 
     await salvarReceitasFirebase(receitas);
 
     atualizarTelas();
+
     limparFormularioReceita();
 
     modalReceita.style.display = "none";
@@ -450,160 +445,8 @@ function limparFormularioReceita(){
 
 
 // ==========================
-// LANÇAMENTOS
+// FILTROS
 // ==========================
-
-function renderizar(){
-
-    lista.innerHTML = "";
-
-    const lancamentos = [];
-
-    despesas.forEach((item, indice) => {
-    lancamentos.push({
-        tipo: "despesa",
-        indice,
-        ...item
-    });
-});
-
-    receitas.forEach((item, indice) => {
-    lancamentos.push({
-        tipo: "receita",
-        indice,
-        ...item
-    });
-});
-
-    if(lancamentos.length === 0){
-
-        lista.innerHTML =
-            "<p>Nenhum lançamento ainda.</p>";
-
-        return;
-    }
-
-    const filtroMes =
-    document.getElementById("filtroMes")?.value || "todos";
-
-const lancamentosFiltrados =
-    lancamentos.filter(item => {
-
-        if(filtroMes === "todos"){
-            return true;
-        }
-
-        return obterMesAno(item.data) === filtroMes;
-
-    });
-
-lancamentosFiltrados.reverse();
-
-lancamentosFiltrados.forEach(item => {
-
-        if(item.tipo === "receita"){
-
-            lista.innerHTML += `
-                <div class="meta-financeira">
-                    💰 ${item.descricao}
-                    <br>
-                    R$ ${Number(item.valor).toLocaleString(
-                        "pt-BR",
-                        {
-                            minimumFractionDigits: 2
-                        }
-                    )}
-
-                    <br>
-                    📅 ${formatarData(item.data)}
-
-                    ${item.pago ? `
-                        <br>
-                        <span class="selo-pago">
-                            ✅ Pago
-                    </span>
-` : ""}
-
-                    <br><br>
-
-                    <button
-                        class="btn-editar"
-                        onclick="editarReceita(${item.indice})">
-                        ✏️ Editar
-                    </button>
-
-                    <button
-                        class="btn-excluir"
-                        onclick="excluirReceita(${item.indice})">
-                        🗑 Excluir
-                    </button>
-                
-                </div>
-            `;
-
-        } else {
-
-            let parcelaTexto = "";
-
-            if(
-                item.ehParcelado &&
-                item.parcelaAtual &&
-                item.totalParcelas
-            ){
-                parcelaTexto =
-                    `<br>📦 ${item.parcelaAtual}/${item.totalParcelas}`;
-            }
-
-            lista.innerHTML += `
-    <div class="meta">
-        💸 ${item.descricao}
-        <br>
-
-        R$ ${Number(item.valor).toLocaleString(
-            "pt-BR",
-            {
-                minimumFractionDigits: 2
-            }
-        )}
-
-        ${parcelaTexto}
-
-        <br>
-
-        📅 ${formatarData(item.data)}
-
-        ${item.pago ? `
-            <br>
-            <strong>✅ Pago</strong>
-        ` : ""}
-
-        <br><br>
-
-        <button
-            class="btn-editar"
-            onclick="editarDespesa(${item.indice})">
-            ✏️ Editar
-        </button>
-
-<button
-    class="btn-excluir"
-    onclick="excluirDespesa(${item.indice})">
-    🗑 Excluir
-</button>
-
-<button
-    class="${item.pago ? 'btn-desfazer' : 'btn-pago'}"
-    onclick="alternarPagamento(${item.indice})">
-    ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
-</button>
-
-                </div>
-            `;
-        }
-
-    });
-
-}
 
 function obterMesAno(data){
 
@@ -613,9 +456,46 @@ function obterMesAno(data){
 
 }
 
+function obterFiltroStatus(){
+
+    return (
+        document.getElementById("filtroStatus")?.value
+        || "todos"
+    );
+
+}
+
+function passaFiltroMes(item, filtroMes){
+
+    if(filtroMes === "todos"){
+        return true;
+    }
+
+    return obterMesAno(item.data) === filtroMes;
+
+}
+
+function passaFiltroStatus(item){
+
+    const filtroStatus =
+        obterFiltroStatus();
+
+    if(filtroStatus === "pendentes" && item.pago){
+        return false;
+    }
+
+    if(filtroStatus === "pagos" && !item.pago){
+        return false;
+    }
+
+    return true;
+
+}
+
 function nomeMes(mesAno){
 
-    const [ano, mes] = mesAno.split("-");
+    const [ano, mes] =
+        mesAno.split("-");
 
     const meses = [
         "Janeiro",
@@ -632,7 +512,7 @@ function nomeMes(mesAno){
         "Dezembro"
     ];
 
-    return `${meses[Number(mes)-1]} ${ano}`;
+    return `${meses[Number(mes) - 1]} ${ano}`;
 
 }
 
@@ -643,7 +523,8 @@ function atualizarFiltroMes(){
 
     if(!select) return;
 
-    const meses = new Set();
+    const meses =
+        new Set();
 
     despesas.forEach(item => {
         meses.add(obterMesAno(item.data));
@@ -653,7 +534,8 @@ function atualizarFiltroMes(){
         meses.add(obterMesAno(item.data));
     });
 
-    const valorAtual = select.value;
+    const valorAtual =
+        select.value;
 
     select.innerHTML = `
         <option value="todos">
@@ -662,6 +544,7 @@ function atualizarFiltroMes(){
     `;
 
     [...meses]
+        .filter(Boolean)
         .sort()
         .reverse()
         .forEach(mes => {
@@ -682,6 +565,180 @@ function atualizarFiltroMes(){
 
 
 // ==========================
+// LANÇAMENTOS HOME
+// ==========================
+
+function renderizar(){
+
+    lista.innerHTML = "";
+
+    const lancamentos = [];
+
+    despesas.forEach((item, indice) => {
+
+        lancamentos.push({
+            tipo: "despesa",
+            indice,
+            ...item
+        });
+
+    });
+
+    receitas.forEach((item, indice) => {
+
+        lancamentos.push({
+            tipo: "receita",
+            indice,
+            ...item
+        });
+
+    });
+
+    const filtroMes =
+        document.getElementById("filtroMes")?.value || "todos";
+
+    const filtroStatus =
+        obterFiltroStatus();
+
+    const lancamentosFiltrados =
+        lancamentos.filter(item => {
+
+            if(!passaFiltroMes(item, filtroMes)){
+                return false;
+            }
+
+            if(item.tipo === "receita"){
+
+                return filtroStatus === "todos";
+
+            }
+
+            return passaFiltroStatus(item);
+
+        });
+
+    if(lancamentosFiltrados.length === 0){
+
+        lista.innerHTML =
+            "<p>Nenhum lançamento encontrado.</p>";
+
+        return;
+
+    }
+
+    lancamentosFiltrados.reverse();
+
+    lancamentosFiltrados.forEach(item => {
+
+        if(item.tipo === "receita"){
+
+            lista.innerHTML += `
+                <div class="meta-financeira">
+
+                    💰 ${item.descricao}
+
+                    <br>
+
+                    R$ ${Number(item.valor).toLocaleString(
+                        "pt-BR",
+                        {
+                            minimumFractionDigits: 2
+                        }
+                    )}
+
+                    <br>
+
+                    📅 ${formatarData(item.data)}
+
+                    <br><br>
+
+                    <button
+                        class="btn-editar"
+                        onclick="editarReceita(${item.indice})">
+                        ✏️ Editar
+                    </button>
+
+                    <button
+                        class="btn-excluir"
+                        onclick="excluirReceita(${item.indice})">
+                        🗑 Excluir
+                    </button>
+
+                </div>
+            `;
+
+        } else {
+
+            let parcelaTexto = "";
+
+            if(
+                item.ehParcelado &&
+                item.parcelaAtual &&
+                item.totalParcelas
+            ){
+
+                parcelaTexto =
+                    `<br>📦 ${item.parcelaAtual}/${item.totalParcelas}`;
+
+            }
+
+            lista.innerHTML += `
+                <div class="meta">
+
+                    💸 ${item.descricao}
+
+                    <br>
+
+                    R$ ${Number(item.valor).toLocaleString(
+                        "pt-BR",
+                        {
+                            minimumFractionDigits: 2
+                        }
+                    )}
+
+                    ${parcelaTexto}
+
+                    <br>
+
+                    📅 ${formatarData(item.data)}
+
+                    ${item.pago ? `
+                        <br>
+                        <span class="selo-pago">
+                            ✅ Pago
+                        </span>
+                    ` : ""}
+
+                    <br><br>
+
+                    <button
+                        class="btn-editar"
+                        onclick="editarDespesa(${item.indice})">
+                        ✏️ Editar
+                    </button>
+
+                    <button
+                        class="btn-excluir"
+                        onclick="excluirDespesa(${item.indice})">
+                        🗑 Excluir
+                    </button>
+
+                    <button
+                        class="${item.pago ? 'btn-desfazer' : 'btn-pago'}"
+                        onclick="alternarPagamento(${item.indice})">
+                        ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
+                    </button>
+
+                </div>
+            `;
+
+        }
+
+    });
+
+}
+
+// ==========================
 // RESUMO
 // ==========================
 
@@ -691,35 +748,23 @@ function atualizarResumo(){
         document.getElementById("filtroMes")?.value || "todos";
 
     const despesasFiltradas =
-        despesas.filter(item => {
-
-            if(filtroMes === "todos"){
-                return true;
-            }
-
-            return obterMesAno(item.data) === filtroMes;
-
-        });
+        despesas.filter(item =>
+            passaFiltroMes(item, filtroMes)
+        );
 
     const receitasFiltradas =
-        receitas.filter(item => {
-
-            if(filtroMes === "todos"){
-                return true;
-            }
-
-            return obterMesAno(item.data) === filtroMes;
-
-        });
+        receitas.filter(item =>
+            passaFiltroMes(item, filtroMes)
+        );
 
     const totalDespesas =
-    despesasFiltradas
-        .filter(item => !item.pago)
-        .reduce(
-            (total, item) =>
-                total + Number(item.valor),
-            0
-        );
+        despesasFiltradas
+            .filter(item => !item.pago)
+            .reduce(
+                (total, item) =>
+                    total + Number(item.valor),
+                0
+            );
 
     const totalReceitas =
         receitasFiltradas.reduce(
@@ -763,22 +808,40 @@ function atualizarResumo(){
 
 }
 
+
 // ==========================
-// PARCELAS
+// PARCELAS CARD
 // ==========================
 
 function atualizarParcelas(){
 
-    const parcelasAtivas =
+    const filtroStatus =
+        obterFiltroStatus();
+
+    let parcelasAtivas =
         despesas.filter(
             item => item.ehParcelado
-        ).length;
+        );
+
+    if(filtroStatus !== "todos"){
+
+        parcelasAtivas =
+            parcelasAtivas.filter(item =>
+                passaFiltroStatus(item)
+            );
+
+    }
 
     document.querySelector(".parcelas span")
         .textContent =
-        parcelasAtivas;
+        parcelasAtivas.length;
 
 }
+
+
+// ==========================
+// EXCLUIR
+// ==========================
 
 async function excluirDespesa(indice){
 
@@ -805,16 +868,17 @@ async function excluirReceita(indice){
     await salvarReceitasFirebase(receitas);
 
     atualizarTelas();
+
 }
 
 async function excluirParcelamentoCompleto(indice){
 
-    const despesa = despesas[indice];
+    const despesa =
+        despesas[indice];
 
     if(!despesa.grupoParcelamento){
 
         alert("Esta despesa não pertence a um parcelamento.");
-
         return;
 
     }
@@ -829,8 +893,7 @@ async function excluirParcelamentoCompleto(indice){
 
     despesas = despesas.filter(
         item =>
-            item.grupoParcelamento !==
-            despesa.grupoParcelamento
+            item.grupoParcelamento !== despesa.grupoParcelamento
     );
 
     await salvarDespesasFirebase(despesas);
@@ -839,11 +902,17 @@ async function excluirParcelamentoCompleto(indice){
 
 }
 
+
+// ==========================
+// DATAS / TELAS
+// ==========================
+
 function formatarData(data){
 
     if(!data) return "";
 
-    const partes = data.split("-");
+    const partes =
+        data.split("-");
 
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
 
@@ -852,22 +921,33 @@ function formatarData(data){
 function atualizarTelas(){
 
     atualizarFiltroMes();
+
     renderizar();
+
     renderizarDespesas();
+
     renderizarReceitas();
+
     renderizarParcelas();
+
     renderizarMetas();
+
     atualizarResumo();
+
     atualizarParcelas();
+
     atualizarTituloMes();
+
     pesquisarLancamentos();
 
 }
 
 function limparUndefined(obj){
+
     return JSON.parse(
         JSON.stringify(obj)
     );
+
 }
 
 async function salvarTudoFirebase(){
@@ -880,17 +960,22 @@ async function salvarTudoFirebase(){
 
 }
 
+
+// ==========================
+// NAVEGAÇÃO
+// ==========================
+
 const paginaHome =
-document.getElementById("pagina-home");
+    document.getElementById("pagina-home");
 
 const paginaDespesas =
-document.getElementById("pagina-despesas");
+    document.getElementById("pagina-despesas");
 
 const paginaReceitas =
-document.getElementById("pagina-receitas");
+    document.getElementById("pagina-receitas");
 
 const paginaParcelas =
-document.getElementById("pagina-parcelas");
+    document.getElementById("pagina-parcelas");
 
 function esconderTudo(){
 
@@ -901,6 +986,7 @@ function esconderTudo(){
     paginaConfig.style.display = "none";
 
 }
+
 document.getElementById("btnHome").onclick = () => {
 
     esconderTudo();
@@ -941,28 +1027,32 @@ document.getElementById("btnConfig").onclick = () => {
 
 };
 
+
+// ==========================
+// EVENTOS DOS FILTROS
+// ==========================
+
 const filtroMes =
     document.getElementById("filtroMes");
 
 if(filtroMes){
 
-    filtroMes.addEventListener("change", () => {
+    filtroMes.addEventListener(
+        "change",
+        atualizarTelas
+    );
 
-    renderizar();
+}
 
-    renderizarDespesas();
+const filtroStatusSelect =
+    document.getElementById("filtroStatus");
 
-    renderizarReceitas();
-    
-    atualizarResumo();
+if(filtroStatusSelect){
 
-    atualizarTituloMes();
-
-    renderizarParcelas();
-
-    pesquisarLancamentos();
-
-});
+    filtroStatusSelect.addEventListener(
+        "change",
+        atualizarTelas
+    );
 
 }
 
@@ -989,10 +1079,6 @@ function atualizarTituloMes(){
     }
 
 }
-
-// ==========================
-// METAS
-// ==========================
 
 const btnNovaMeta =
     document.getElementById("btnNovaMeta");
@@ -1040,41 +1126,43 @@ salvarMeta.onclick = async () => {
         );
 
     if(!nome || !objetivo || objetivo <= 0 || atual < 0){
+
         alert("Preencha nome, objetivo e valor guardado da meta.");
         return;
+
     }
 
     if(indiceMetaEditando !== null){
 
-    metas[indiceMetaEditando] = {
-        nome,
-        objetivo,
-        atual
-    };
+        metas[indiceMetaEditando] = {
+            nome,
+            objetivo,
+            atual
+        };
 
-    indiceMetaEditando = null;
+        indiceMetaEditando = null;
 
-} else {
+    } else {
 
-    metas.push({
-        nome,
-        objetivo,
-        atual
-    });
+        metas.push({
+            nome,
+            objetivo,
+            atual
+        });
 
-}
+    }
 
     await salvarMetasFirebase(metas);
 
-atualizarTelas();
+    atualizarTelas();
 
     modalMeta.style.display = "none";
 
-document.getElementById("nomeMeta").value = "";
-document.getElementById("valorObjetivo").value = "";
-document.getElementById("valorAtualMeta").value = "";
+    document.getElementById("nomeMeta").value = "";
+    document.getElementById("valorObjetivo").value = "";
+    document.getElementById("valorAtualMeta").value = "";
 
-indiceMetaEditando = null;
+    indiceMetaEditando = null;
 
 };
 
@@ -1096,7 +1184,7 @@ function renderizarMetas(){
             );
 
         listaMetas.innerHTML += `
-           <div class="meta-financeira">
+            <div class="meta-financeira">
 
                 <strong>🎯 ${meta.nome}</strong>
 
@@ -1124,7 +1212,7 @@ function renderizarMetas(){
                 <button
                     class="btn-excluir"
                     onclick="excluirMeta(${metas.indexOf(meta)})">
-                    🗑 Excluir
+                    🗑️ Excluir
                 </button>
 
                 <button
@@ -1132,9 +1220,8 @@ function renderizarMetas(){
                     onclick="editarMeta(${metas.indexOf(meta)})">
                     ✏️ Editar
                 </button>
-                </div>
 
-                
+            </div>
         `;
 
     });
@@ -1151,13 +1238,14 @@ async function excluirMeta(indice){
 
     await salvarMetasFirebase(metas);
 
-renderizarMetas();
+    atualizarTelas();
 
 }
 
 function editarMeta(indice){
 
-    const meta = metas[indice];
+    const meta =
+        metas[indice];
 
     document.getElementById("nomeMeta").value =
         meta.nome;
@@ -1174,9 +1262,15 @@ function editarMeta(indice){
 
 }
 
+
+// ==========================
+// EDITAR DESPESA / RECEITA
+// ==========================
+
 function editarDespesa(indice){
 
-    const despesa = despesas[indice];
+    const despesa =
+        despesas[indice];
 
     document.getElementById("descricao").value =
         despesa.descricao;
@@ -1210,7 +1304,8 @@ function editarDespesa(indice){
 
 function editarReceita(indice){
 
-    const receita = receitas[indice];
+    const receita =
+        receitas[indice];
 
     document.getElementById("descricaoReceita").value =
         receita.descricao;
@@ -1227,37 +1322,41 @@ function editarReceita(indice){
 
 }
 
+// ==========================
+// RENDERIZAR DESPESAS
+// ==========================
+
 function renderizarDespesas(){
 
     const listaDespesas =
         document.getElementById("lista-despesas");
 
     const filtroSelecionado =
-    document.getElementById("filtroMes")?.value || "todos";
+        document.getElementById("filtroMes")?.value || "todos";
 
     listaDespesas.innerHTML = "";
 
     despesas
-.map((item, indice) => ({
-    ...item,
-    indice
-}))
-    .filter(item => {
+        .map((item, indice) => ({
+            ...item,
+            indice
+        }))
+        .filter(item => {
 
-        if(item.ehParcelado){
-            return false;
-        }
+            if(item.ehParcelado){
+                return false;
+            }
 
-        if(filtroSelecionado === "todos"){
-            return true;
-        }
+            if(!passaFiltroMes(item, filtroSelecionado)){
+                return false;
+            }
 
-        return obterMesAno(item.data) === filtroSelecionado;
+            return passaFiltroStatus(item);
 
-    })
-    .slice()
-    .reverse()
-    .forEach((item) => {
+        })
+        .slice()
+        .reverse()
+        .forEach(item => {
 
             listaDespesas.innerHTML += `
                 <div class="meta-financeira">
@@ -1277,15 +1376,13 @@ function renderizarDespesas(){
 
                     📅 ${formatarData(item.data)}
 
-${item.pago ? `
-    <br>
-    <br>
-    <span class="selo-pago">
-        ✅ Pago
-    </span>
-` : ""}
-
-<br><br>
+                    ${item.pago ? `
+                        <br>
+                        <br>
+                        <span class="selo-pago">
+                            ✅ Pago
+                        </span>
+                    ` : ""}
 
                     <br><br>
 
@@ -1298,7 +1395,7 @@ ${item.pago ? `
                     <button
                         class="btn-excluir"
                         onclick="excluirDespesa(${item.indice})">
-                        🗑 Excluir
+                        🗑️ Excluir
                     </button>
 
                     <button
@@ -1313,6 +1410,11 @@ ${item.pago ? `
         });
 
 }
+
+
+// ==========================
+// RENDERIZAR RECEITAS
+// ==========================
 
 function renderizarReceitas(){
 
@@ -1331,16 +1433,12 @@ function renderizarReceitas(){
         }))
         .filter(item => {
 
-            if(filtroSelecionado === "todos"){
-                return true;
-            }
-
-            return obterMesAno(item.data) === filtroSelecionado;
+            return passaFiltroMes(item, filtroSelecionado);
 
         })
         .slice()
         .reverse()
-        .forEach((item) => {
+        .forEach(item => {
 
             listaReceitas.innerHTML += `
                 <div class="meta-financeira">
@@ -1371,7 +1469,7 @@ function renderizarReceitas(){
                     <button
                         class="btn-excluir"
                         onclick="excluirReceita(${item.indice})">
-                        🗑 Excluir
+                        🗑️ Excluir
                     </button>
 
                 </div>
@@ -1380,6 +1478,11 @@ function renderizarReceitas(){
         });
 
 }
+
+
+// ==========================
+// RENDERIZAR PARCELAS
+// ==========================
 
 function renderizarParcelas(){
 
@@ -1392,29 +1495,26 @@ function renderizarParcelas(){
     listaParcelas.innerHTML = "";
 
     despesas
-.map((item, indice) => ({
-    ...item,
-    indice
-}))
+        .map((item, indice) => ({
+            ...item,
+            indice
+        }))
         .filter(item => {
 
             if(!item.ehParcelado){
                 return false;
             }
 
-            if(filtroSelecionado === "todos"){
-                return true;
+            if(!passaFiltroMes(item, filtroSelecionado)){
+                return false;
             }
 
-            return (
-                obterMesAno(item.data) ===
-                filtroSelecionado
-            );
+            return passaFiltroStatus(item);
 
         })
         .slice()
         .reverse()
-        .forEach((item, indice) => {
+        .forEach(item => {
 
             listaParcelas.innerHTML += `
                 <div class="meta-financeira">
@@ -1442,12 +1542,12 @@ function renderizarParcelas(){
                     📅 ${formatarData(item.data)}
 
                     ${item.pago ? `
-    <br>
-    <br>
-    <span class="selo-pago">
-        ✅ Pago
-    </span>
-` : ""}
+                        <br>
+                        <br>
+                        <span class="selo-pago">
+                            ✅ Pago
+                        </span>
+                    ` : ""}
 
                     <br><br>
 
@@ -1460,7 +1560,7 @@ function renderizarParcelas(){
                     <button
                         class="btn-excluir"
                         onclick="excluirDespesa(${item.indice})">
-                        🗑 Excluir
+                        🗑️ Excluir
                     </button>
 
                     <button
@@ -1470,10 +1570,10 @@ function renderizarParcelas(){
                     </button>
 
                     <button
-    class="${item.pago ? 'btn-desfazer' : 'btn-pago'}"
-    onclick="alternarPagamento(${item.indice})">
-    ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
-</button>
+                        class="${item.pago ? 'btn-desfazer' : 'btn-pago'}"
+                        onclick="alternarPagamento(${item.indice})">
+                        ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
+                    </button>
 
                 </div>
             `;
@@ -1492,20 +1592,22 @@ function renderizarParcelas(){
 
 }
 
+// ==========================
+// CONFIGURAÇÕES
+// ==========================
+
 document.getElementById("btnLimparDespesas")
 .onclick = async () => {
 
-    if(!confirm(
-        "Deseja apagar TODAS as despesas?"
-    )){
+    if(!confirm("Deseja apagar TODAS as despesas?")){
         return;
     }
 
     ultimoBackup = {
-    despesas: [...despesas],
-    receitas: [...receitas],
-    metas: [...metas]
-};
+        despesas: [...despesas],
+        receitas: [...receitas],
+        metas: [...metas]
+    };
 
     despesas = [];
 
@@ -1518,17 +1620,15 @@ document.getElementById("btnLimparDespesas")
 document.getElementById("btnLimparReceitas")
 .onclick = async () => {
 
-    if(!confirm(
-        "Deseja apagar TODAS as receitas?"
-    )){
+    if(!confirm("Deseja apagar TODAS as receitas?")){
         return;
     }
 
     ultimoBackup = {
-    despesas: [...despesas],
-    receitas: [...receitas],
-    metas: [...metas]
-};
+        despesas: [...despesas],
+        receitas: [...receitas],
+        metas: [...metas]
+    };
 
     receitas = [];
 
@@ -1541,17 +1641,15 @@ document.getElementById("btnLimparReceitas")
 document.getElementById("btnLimparMetas")
 .onclick = async () => {
 
-    if(!confirm(
-        "Deseja apagar TODAS as metas?"
-    )){
+    if(!confirm("Deseja apagar TODAS as metas?")){
         return;
     }
 
     ultimoBackup = {
-    despesas: [...despesas],
-    receitas: [...receitas],
-    metas: [...metas]
-};
+        despesas: [...despesas],
+        receitas: [...receitas],
+        metas: [...metas]
+    };
 
     metas = [];
 
@@ -1565,8 +1663,10 @@ document.getElementById("btnDesfazer")
 .onclick = async () => {
 
     if(!ultimoBackup){
+
         alert("Nenhuma limpeza para desfazer.");
         return;
+
     }
 
     despesas = ultimoBackup.despesas;
@@ -1617,42 +1717,6 @@ document.getElementById("btnImportar")
 
 };
 
-const temaSelect =
-    document.getElementById("temaSelect");
-
-temaSelect.value =
-    localStorage.getItem("tema")
-    || "claro";
-
-aplicarTema(temaSelect.value);
-
-temaSelect.addEventListener("change", () => {
-
-    aplicarTema(temaSelect.value);
-
-});
-
-function aplicarTema(tema){
-
-    document.body.classList.remove(
-        "tema-escuro"
-    );
-
-    if(tema === "escuro"){
-
-        document.body.classList.add(
-            "tema-escuro"
-        );
-
-    }
-
-    localStorage.setItem(
-        "tema",
-        tema
-    );
-
-}
-
 document.getElementById("arquivoBackup")
 .addEventListener("change", (evento) => {
 
@@ -1689,28 +1753,19 @@ document.getElementById("arquivoBackup")
                 return;
             }
 
-            despesas =
-                backup.despesas;
-
-            receitas =
-                backup.receitas;
-
-            metas =
-                backup.metas;
+            despesas = backup.despesas;
+            receitas = backup.receitas;
+            metas = backup.metas;
 
             await salvarTudoFirebase();
 
             atualizarTelas();
 
-            alert(
-                "Backup importado com sucesso!"
-            );
+            alert("Backup importado com sucesso!");
 
         } catch{
 
-            alert(
-                "Arquivo inválido."
-            );
+            alert("Arquivo inválido.");
 
         }
 
@@ -1719,6 +1774,40 @@ document.getElementById("arquivoBackup")
     leitor.readAsText(arquivo);
 
 });
+
+
+// ==========================
+// TEMA
+// ==========================
+
+const temaSelect =
+    document.getElementById("temaSelect");
+
+temaSelect.value =
+    localStorage.getItem("tema") || "claro";
+
+aplicarTema(temaSelect.value);
+
+temaSelect.addEventListener("change", () => {
+
+    aplicarTema(temaSelect.value);
+
+});
+
+function aplicarTema(tema){
+
+    document.body.classList.remove("tema-escuro");
+
+    if(tema === "escuro"){
+
+        document.body.classList.add("tema-escuro");
+
+    }
+
+    localStorage.setItem("tema", tema);
+
+}
+
 
 // ==========================
 // LOGIN
@@ -1742,24 +1831,17 @@ const erroLogin =
 if(localStorage.getItem("autenticado") === "sim"){
 
     telaLogin.style.display = "none";
-
     app.style.display = "block";
 
 }
 
 btnEntrar.onclick = () => {
 
-    if(
-        senhaLogin.value === SENHA
-    ){
+    if(senhaLogin.value === SENHA){
 
-        localStorage.setItem(
-            "autenticado",
-            "sim"
-        );
+        localStorage.setItem("autenticado", "sim");
 
         telaLogin.style.display = "none";
-
         app.style.display = "block";
 
     } else {
@@ -1785,13 +1867,16 @@ senhaLogin.addEventListener("keypress", e => {
 
 document.getElementById("btnSair").onclick = () => {
 
-    localStorage.removeItem(
-        "autenticado"
-    );
+    localStorage.removeItem("autenticado");
 
     location.reload();
 
 };
+
+
+// ==========================
+// ALTERAR SENHA
+// ==========================
 
 const btnTrocarSenha =
     document.getElementById("btnTrocarSenha");
@@ -1831,43 +1916,34 @@ salvarSenha.onclick = async () => {
     if(senhaAtual !== SENHA){
 
         alert("Senha atual incorreta.");
-
         return;
 
     }
 
     if(novaSenha.length < 4){
 
-        alert(
-            "A nova senha deve ter pelo menos 4 caracteres."
-        );
-
+        alert("A nova senha deve ter pelo menos 4 caracteres.");
         return;
 
     }
 
     if(novaSenha !== confirmarSenha){
 
-        alert(
-            "As senhas não coincidem."
-        );
-
+        alert("As senhas não coincidem.");
         return;
 
     }
 
     await salvarSenhaFirebase(novaSenha);
 
-SENHA = novaSenha;
+    SENHA = novaSenha;
 
-localStorage.setItem(
-    "senhaFinanceiro",
-    novaSenha
-);
-
-    alert(
-        "Senha alterada com sucesso!"
+    localStorage.setItem(
+        "senhaFinanceiro",
+        novaSenha
     );
+
+    alert("Senha alterada com sucesso!");
 
     modalSenha.style.display = "none";
 
@@ -1876,6 +1952,11 @@ localStorage.setItem(
     document.getElementById("confirmarSenha").value = "";
 
 };
+
+
+// ==========================
+// FIREBASE
+// ==========================
 
 async function carregarDadosFirebase(){
 
@@ -1901,26 +1982,6 @@ async function carregarDadosFirebase(){
 
 }
 
-async function carregarMetas(){
-
-    try{
-
-        metas =
-            await carregarMetasFirebase();
-
-        renderizarMetas();
-
-    } catch(erro){
-
-        console.error(
-            "Erro ao carregar metas:",
-            erro
-        );
-
-    }
-
-}
-
 async function carregarSenha(){
 
     SENHA =
@@ -1935,13 +1996,13 @@ async function alternarPagamento(indice){
 
     await salvarDespesasFirebase(despesas);
 
-    atualizarResumo();
-
-    renderizar();
-    renderizarDespesas();
-    renderizarParcelas();
+    atualizarTelas();
 
 }
+
+// ==========================
+// PESQUISA
+// ==========================
 
 const campoPesquisa =
     document.getElementById("pesquisaLancamentos");
@@ -1949,9 +2010,20 @@ const campoPesquisa =
 const resultadoPesquisa =
     document.getElementById("resultadoPesquisa");
 
-campoPesquisa.addEventListener("input", pesquisarLancamentos);
+if(campoPesquisa){
+
+    campoPesquisa.addEventListener(
+        "input",
+        pesquisarLancamentos
+    );
+
+}
 
 function pesquisarLancamentos(){
+
+    if(!campoPesquisa || !resultadoPesquisa){
+        return;
+    }
 
     const texto =
         campoPesquisa.value
@@ -1967,54 +2039,54 @@ function pesquisarLancamentos(){
     const filtroSelecionado =
         document.getElementById("filtroMes")?.value || "todos";
 
+    const filtroStatus =
+        obterFiltroStatus();
+
     const resultados = [];
 
-    despesas.forEach((item, indice)=>{
+    despesas.forEach((item, indice) => {
 
         if(
             String(item.descricao || "").toLowerCase().includes(texto) &&
-            (
-                filtroSelecionado === "todos" ||
-                obterMesAno(item.data) === filtroSelecionado
-            )
+            passaFiltroMes(item, filtroSelecionado) &&
+            passaFiltroStatus(item)
         ){
+
             resultados.push({
-
-                tipo:"despesa",
-                indice,
+                tipo: "despesa",
+                indice: indice,
                 ...item
-
-});
+            });
 
         }
 
     });
 
-    receitas.forEach((item, indice)=>{
+    if(filtroStatus === "todos"){
 
-        if(
-            String(item.descricao || "").toLowerCase().includes(texto) &&
-            (
-                filtroSelecionado === "todos" ||
-                obterMesAno(item.data) === filtroSelecionado
-            )
-        ){
-            resultados.push({
-                tipo:"receita",
-                indice,
-                ...item
+        receitas.forEach((item, indice) => {
 
-});
+            if(
+                String(item.descricao || "").toLowerCase().includes(texto) &&
+                passaFiltroMes(item, filtroSelecionado)
+            ){
 
-        }
+                resultados.push({
+                    tipo: "receita",
+                    indice: indice,
+                    ...item
+                });
 
+            }
+
+        });
+
+    }
+
+    resultados.sort((a, b) => {
+        return String(b.data || "")
+            .localeCompare(String(a.data || ""));
     });
-
-    resultados.sort(
-        (a, b) =>
-            String(b.data || "")
-                .localeCompare(String(a.data || ""))
-    );
 
     if(resultados.length === 0){
 
@@ -2028,29 +2100,29 @@ function pesquisarLancamentos(){
 
     }
 
-    resultados.forEach(item=>{
+    resultados.forEach(item => {
 
         const valorFormatado =
             Number(item.valor).toLocaleString(
                 "pt-BR",
                 {
-                    style:"currency",
-                    currency:"BRL"
+                    style: "currency",
+                    currency: "BRL"
                 }
             );
 
         const parcelaTexto =
-            item.tipo === "despesa" &&
-            item.ehParcelado &&
-            item.parcelaAtual &&
-            item.totalParcelas
-                ? `<br>📦 Parcela ${item.parcelaAtual}/${item.totalParcelas}`
-                : "";
+    item.tipo === "despesa" &&
+    item.ehParcelado &&
+    item.parcelaAtual &&
+    item.totalParcelas
+        ? `<br>📦 Parcela ${item.parcelaAtual}/${item.totalParcelas}`
+        : "";
 
-        const categoriaTexto =
-            item.tipo === "despesa" && item.categoria
-                ? `<br>🏷 ${item.categoria}`
-                : "";
+const categoriaTexto =
+    item.tipo === "despesa" && item.categoria
+        ? `<br>🏷️ ${item.categoria}`
+        : "";
 
         const pagoTexto =
             item.tipo === "despesa" && item.pago
@@ -2062,92 +2134,88 @@ function pesquisarLancamentos(){
                 `
                 : "";
 
-        const botoesDespesa =
-            item.tipo === "despesa"
-                ? `
-                    <button
-                        class="btn-editar"
-                        onclick="editarDespesa(${item.indice})">
-                        ✏️ Editar
-                    </button>
+        let botoes = "";
 
-                    <button
-                        class="btn-excluir"
-                        onclick="excluirDespesa(${item.indice})">
-                        🗑 Excluir
-                    </button>
+        if(item.tipo === "despesa"){
 
-                    <button
-                        class="${item.pago ? 'btn-desfazer' : 'btn-pago'}"
-                        onclick="alternarPagamento(${item.indice})">
-                        ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
-                    </button>
-                `
-                : "";
+            botoes = `
+                <button
+                    class="btn-editar"
+                    onclick="editarDespesa(${item.indice})">
+                    ✏️ Editar
+                </button>
 
-        const botaoParcelamento =
-            item.tipo === "despesa" && item.grupoParcelamento
-                ? `
+                <button
+                    class="btn-excluir"
+                    onclick="excluirDespesa(${item.indice})">
+                    🗑️ Excluir
+                </button>
+
+                ${item.grupoParcelamento ? `
                     <button
                         class="btn-excluir"
                         onclick="excluirParcelamentoCompleto(${item.indice})">
                         📦 Excluir Parcelas
                     </button>
-                `
-                : "";
+                ` : ""}
 
-        const botoesReceita =
-            item.tipo === "receita"
-                ? `
-                    <button
-                        class="btn-editar"
-                        onclick="editarReceita(${item.indice})">
-                        ✏️ Editar
-                    </button>
+                <button
+                    class="${item.pago ? "btn-desfazer" : "btn-pago"}"
+                    onclick="alternarPagamento(${item.indice})">
+                    ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
+                </button>
+            `;
 
-                    <button
-                        class="btn-excluir"
-                        onclick="excluirReceita(${item.indice})">
-                        🗑 Excluir
-                    </button>
-                `
-                : "";
+        } else {
+
+            botoes = `
+                <button
+                    class="btn-editar"
+                    onclick="editarReceita(${item.indice})">
+                    ✏️ Editar
+                </button>
+
+                <button
+                    class="btn-excluir"
+                    onclick="excluirReceita(${item.indice})">
+                    🗑️ Excluir
+                </button>
+            `;
+
+        }
 
         resultadoPesquisa.innerHTML += `
-<div class="resultado-pesquisa">
+            <div class="resultado-pesquisa">
 
-    
-    <strong>
-        ${item.tipo == "despesa" ? "💸" : "💰"}
-        ${item.descricao || "Sem descrição"}
-    </strong>
+                <strong>
+                    ${item.tipo === "despesa" ? "💸" : "💰"}
+                    ${item.descricao || "Sem descrição"}
+                </strong>
 
-    <br>
+                <br>
 
-    ${valorFormatado}
+                ${valorFormatado}
 
-    ${categoriaTexto}
+                ${categoriaTexto}
 
-    ${parcelaTexto}
+                ${parcelaTexto}
 
-    <br>
+                <br>
 
-    📅 ${formatarData(item.data)}
+                📅 ${formatarData(item.data)}
 
-    ${pagoTexto}
+                ${pagoTexto}
 
-    <div class="acoes-resultado-pesquisa">
-        ${botoesDespesa}
-        ${botaoParcelamento}
-        ${botoesReceita}
-    </div>
+                <div class="acoes-resultado-pesquisa">
+                    ${botoes}
+                </div>
 
-</div>
-`;
+            </div>
+        `;
+
     });
 
 }
-
 
 
 // ==========================
@@ -2160,24 +2228,7 @@ async function inicializarSistema(){
 
     await carregarDadosFirebase();
 
-
-    atualizarFiltroMes();
-
-    renderizar();
-
-    renderizarDespesas();
-
-    renderizarReceitas();
-
-    renderizarMetas();
-
-    renderizarParcelas();
-
-    atualizarResumo();
-
-    atualizarParcelas();
-
-    atualizarTituloMes();
+    atualizarTelas();
 
 }
 
