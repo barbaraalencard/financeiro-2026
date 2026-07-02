@@ -400,46 +400,6 @@ body{
     opacity:0.8;
 }
 
-.filtro-mes{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-bottom:15px;
-}
-
-.filtro-mes label{
-    font-size:1.5rem;
-    font-weight:700;
-    color:#5D5A58;
-}
-
-#filtroMes{
-    background:white;
-    border:none;
-    border-radius:12px;
-
-    padding:8px 14px;
-
-    font-family:inherit;
-    font-size:0.95rem;
-
-    color:#5D5A58;
-
-    box-shadow:0 2px 6px rgba(0,0,0,.05);
-
-    cursor:pointer;
-
-    transition:.2s;
-}
-
-#filtroMes:hover{
-    transform:translateY(-1px);
-}
-
-#filtroMes:focus{
-    outline:none;
-    box-shadow:0 0 0 3px rgba(216,208,240,.4);
-}
 
 .titulo-aba{
     text-align:center;
@@ -712,86 +672,61 @@ body.tema-escuro .modal-content{
 
 }
 
-.filtro-mes{
-
-    display:flex;
-    align-items:center;
-    gap:20px;
-    flex-wrap:wrap;
-
-}
-
-/* Barra dos filtros */
+/* ==========================
+   FILTROS MÊS / STATUS
+========================== */
 
 .barra-filtros{
-
     display:flex;
-
     align-items:center;
-
-    gap:28px;
-
-    margin:25px 0;
-
+    gap:32px;
     flex-wrap:wrap;
-
+    margin:25px 0;
 }
-
-/* Cada filtro */
 
 .filtro-mes,
 .filtro-status{
-
     display:flex;
-
     align-items:center;
-
     gap:10px;
-
+    margin:0;
 }
-
-/* Texto "Mês" e "Status" */
 
 .filtro-mes label,
 .filtro-status label{
-
-    font-family:'Nunito',sans-serif;
-
+    display:flex;
+    align-items:center;
+    height:48px;
+    margin:0;
+    padding:0;
+    font-family:'Nunito', sans-serif;
     font-size:1.5rem;
-
+    line-height:1;
     font-weight:700;
-
     color:#5b524d;
-
     white-space:nowrap;
-
 }
 
-/* Selects */
-
-.filtro-mes select,
-.filtro-status select{
-
-    padding:10px 16px;
-
+#filtroMes,
+#filtroStatus{
     height:48px;
-
+    padding:0 18px;
     border:none;
-
-    border-radius:12px;
-
+    border-radius:14px;
     background:#fff;
-
-    box-shadow:0 4px 12px rgba(0,0,0,.08);
-
-    font-family:'Nunito',sans-serif;
-
-    font-size:.95rem;
-
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+    font-family:'Nunito', sans-serif;
+    font-size:1rem;
     font-weight:600;
-
     color:#4b4b4b;
-
     cursor:pointer;
+    margin:0;
+}
 
+#filtroMes{
+    min-width:170px;
+}
+
+#filtroStatus{
+    min-width:140px;
 }
