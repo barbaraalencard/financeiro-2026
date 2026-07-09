@@ -7,6 +7,7 @@ let SENHA = "Flora2026";
 let despesas = [];
 let receitas = [];
 let metas = [];
+let conta = {};
 
 let mesesArquivados = [];
 
@@ -15,6 +16,9 @@ let indiceDespesaEditando = null;
 let indiceReceitaEditando = null;
 
 let ultimoBackup = null;
+
+let metasRecolhidas =
+    localStorage.getItem("metasRecolhidas") === "sim";
 
 
 // ==========================
@@ -57,10 +61,20 @@ const campoParcelas =
 const paginaConfig =
     document.getElementById("pagina-config");
 
+const btnEditarConta =
+    document.getElementById("btnEditarConta");
+
 
 // ==========================
 // MODAIS
 // ==========================
+
+if(btnEditarConta){
+
+    btnEditarConta.onclick =
+        editarConta;
+
+}
 
 btnNovaDespesa.onclick = () => {
 
@@ -866,6 +880,76 @@ function formatarMoeda(valor){
 
 }
 
+function obterMesesContaVisiveis(filtroMes){
+
+    if(filtroMes !== "todos"){
+        return [filtroMes];
+    }
+
+    return obterMesesComRegistros()
+        .filter(mes => !mesEstaArquivado(mes));
+
+}
+
+function calcularTotalConta(filtroMes){
+
+    return obterMesesContaVisiveis(filtroMes)
+        .reduce(
+            (total, mes) =>
+                total + Number(conta[mes] || 0),
+            0
+        );
+
+}
+
+async function editarConta(){
+
+    const filtroMes =
+        document.getElementById("filtroMes")?.value || "todos";
+
+    if(filtroMes === "todos"){
+
+        alert("Selecione um mês específico antes de editar o valor da conta.");
+        return;
+
+    }
+
+    const valorAtual =
+        Number(conta[filtroMes] || 0);
+
+    const resposta =
+        prompt(
+            `Saldo da conta em ${nomeMes(filtroMes)}:`,
+            valorAtual || ""
+        );
+
+    if(resposta === null){
+        return;
+    }
+
+    const valor =
+        Number(
+            resposta
+                .replace(/\./g, "")
+                .replace(",", ".")
+        );
+
+    if(Number.isNaN(valor) || valor < 0){
+
+        alert("Informe um valor válido para a conta.");
+        return;
+
+    }
+
+    conta[filtroMes] =
+        valor;
+
+    await salvarContaFirebase(conta);
+
+    atualizarTelas();
+
+}
+
 function atualizarFiltroMes(){
 
     const select =
@@ -938,6 +1022,29 @@ function atualizarFiltroMes(){
             }).join("");
 
     }
+
+}
+
+function selecionarMesMaisRecenteAoAbrir(){
+
+    const select =
+        document.getElementById("filtroMes");
+
+    if(!select){
+        return;
+    }
+
+    const meses =
+        obterMesesComRegistros()
+            .filter(mes => !mesEstaArquivado(mes));
+
+    if(meses.length === 0){
+        select.value = "todos";
+        return;
+    }
+
+    select.value =
+        meses[0];
 
 }
 
@@ -1166,7 +1273,10 @@ function atualizarResumo(){
         );
 
     const saldo =
-        totalReceitas - totalDespesas;
+        calcularTotalConta(filtroMes) - totalDespesas;
+
+    const totalConta =
+        calcularTotalConta(filtroMes);
 
     document.querySelector(".despesas span")
         .textContent =
@@ -1187,6 +1297,20 @@ function atualizarResumo(){
                 currency:"BRL"
             }
         );
+
+    if(document.querySelector(".conta span")){
+
+        document.querySelector(".conta span")
+            .textContent =
+            totalConta.toLocaleString(
+                "pt-BR",
+                {
+                    style:"currency",
+                    currency:"BRL"
+                }
+            );
+
+    }
 
     document.querySelector(".saldo span")
         .textContent =
@@ -1355,7 +1479,8 @@ async function salvarTudoFirebase(){
         salvarDespesasFirebase(despesas),
         salvarReceitasFirebase(receitas),
         salvarMetasFirebase(metas),
-        salvarMesesArquivadosFirebase(mesesArquivados)
+        salvarMesesArquivadosFirebase(mesesArquivados),
+        salvarContaFirebase(conta)
     ]);
 
 }
@@ -1497,6 +1622,9 @@ function atualizarTituloMes(){
 const btnNovaMeta =
     document.getElementById("btnNovaMeta");
 
+const btnToggleMetas =
+    document.getElementById("btnToggleMetas");
+
 const modalMeta =
     document.getElementById("modalMeta");
 
@@ -1505,6 +1633,41 @@ const cancelarMeta =
 
 const salvarMeta =
     document.getElementById("salvarMeta");
+
+function atualizarEstadoMetas(){
+
+    const listaMetas =
+        document.getElementById("lista-metas");
+
+    if(!listaMetas || !btnToggleMetas){
+        return;
+    }
+
+    listaMetas.style.display =
+        metasRecolhidas ? "none" : "flex";
+
+    btnToggleMetas.textContent =
+        metasRecolhidas ? "Expandir" : "Recolher";
+
+}
+
+if(btnToggleMetas){
+
+    btnToggleMetas.onclick = () => {
+
+        metasRecolhidas =
+            !metasRecolhidas;
+
+        localStorage.setItem(
+            "metasRecolhidas",
+            metasRecolhidas ? "sim" : "nao"
+        );
+
+        atualizarEstadoMetas();
+
+    };
+
+}
 
 btnNovaMeta.onclick = () => {
 
@@ -2174,6 +2337,8 @@ function renderizarArquivados(){
 
     });
 
+    atualizarEstadoMetas();
+
 }
 
 async function arquivarMesSelecionado(){
@@ -2273,7 +2438,8 @@ document.getElementById("btnLimparDespesas")
         despesas: [...despesas],
         receitas: [...receitas],
         metas: [...metas],
-        mesesArquivados: [...mesesArquivados]
+        mesesArquivados: [...mesesArquivados],
+        conta: { ...conta }
     };
 
     despesas = [];
@@ -2295,7 +2461,8 @@ document.getElementById("btnLimparReceitas")
         despesas: [...despesas],
         receitas: [...receitas],
         metas: [...metas],
-        mesesArquivados: [...mesesArquivados]
+        mesesArquivados: [...mesesArquivados],
+        conta: { ...conta }
     };
 
     receitas = [];
@@ -2317,7 +2484,8 @@ document.getElementById("btnLimparMetas")
         despesas: [...despesas],
         receitas: [...receitas],
         metas: [...metas],
-        mesesArquivados: [...mesesArquivados]
+        mesesArquivados: [...mesesArquivados],
+        conta: { ...conta }
     };
 
     metas = [];
@@ -2341,6 +2509,7 @@ document.getElementById("btnDesfazer")
     despesas = ultimoBackup.despesas;
     receitas = ultimoBackup.receitas;
     metas = ultimoBackup.metas;
+    conta = ultimoBackup.conta || {};
     mesesArquivados =
         normalizarMesesArquivados(
             ultimoBackup.mesesArquivados || []
@@ -2361,7 +2530,8 @@ document.getElementById("btnExportar")
         despesas,
         receitas,
         metas,
-        mesesArquivados
+        mesesArquivados,
+        conta
     };
 
     const blob = new Blob(
@@ -2430,6 +2600,7 @@ document.getElementById("arquivoBackup")
             despesas = backup.despesas;
             receitas = backup.receitas;
             metas = backup.metas;
+            conta = backup.conta || {};
             mesesArquivados =
                 normalizarMesesArquivados(
                     backup.mesesArquivados || []
@@ -2648,6 +2819,9 @@ async function carregarDadosFirebase(){
 
         metas =
             await carregarMetasFirebase();
+
+        conta =
+            await carregarContaFirebase();
 
         mesesArquivados =
             normalizarMesesArquivados(
@@ -2910,6 +3084,10 @@ async function inicializarSistema(){
     await carregarSenha();
 
     await carregarDadosFirebase();
+
+    atualizarFiltroMes();
+
+    selecionarMesMaisRecenteAoAbrir();
 
     atualizarTelas();
 

@@ -48,6 +48,10 @@ header h1{
     background:#B7C9B2;
 }
 
+.conta{
+    background:#CFE5F6;
+}
+
 .despesas{
     background:#E7C6D1;
 }
@@ -58,6 +62,18 @@ header h1{
 
 .parcelas{
     background:#FFF4D6;
+}
+
+.btn-card-conta{
+    margin-top:12px;
+    border:none;
+    border-radius:12px;
+    padding:8px 12px;
+    background:rgba(255,255,255,.72);
+    color:#40566f;
+    font-family:inherit;
+    font-weight:800;
+    cursor:pointer;
 }
 
 .metas{
@@ -234,8 +250,8 @@ body{
 }
 
 #lista-lancamentos{
-    display:flex;
-    flex-direction:column;
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
     gap:12px;
 }
 
@@ -336,16 +352,32 @@ body{
     display:flex;
     justify-content:space-between;
     align-items:center;
+    gap:12px;
     margin-bottom:15px;
 }
 
-#btnNovaMeta{
+#btnNovaMeta,
+#btnToggleMetas{
     background:#d9c8f2;
     border:none;
     padding:10px 14px;
     border-radius:12px;
     cursor:pointer;
     font-family:inherit;
+    font-weight:800;
+}
+
+#btnToggleMetas{
+    background:white;
+    color:#5D5A58;
+    box-shadow:0 2px 8px rgba(0,0,0,.05);
+}
+
+.acoes-metas{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
 }
 
 .meta-financeira:hover{
@@ -423,6 +455,10 @@ body{
 @media(max-width:768px){
 
     .grid-lancamentos{
+        grid-template-columns:1fr;
+    }
+
+    #lista-lancamentos{
         grid-template-columns:1fr;
     }
 
@@ -970,6 +1006,16 @@ body.tema-escuro .lancamento-detalhes span{
 
     .barra-filtros{
         gap:16px;
+    }
+
+    .titulo-metas{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .acoes-metas{
+        width:100%;
+        justify-content:flex-start;
     }
 
     .filtro-mes{

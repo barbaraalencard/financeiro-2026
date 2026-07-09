@@ -185,6 +185,41 @@ window.carregarMesesArquivadosFirebase = async function(){
 
 };
 
+// ==========================
+// CONTA
+// ==========================
+
+window.salvarContaFirebase = async function(conta){
+
+    await setDoc(
+        doc(db, "usuarios", "babi"),
+        {
+            conta: limparUndefined(conta)
+        },
+        {
+            merge: true
+        }
+    );
+
+};
+
+window.carregarContaFirebase = async function(){
+
+    const documento =
+        await getDoc(
+            doc(db, "usuarios", "babi")
+        );
+
+    if(documento.exists()){
+
+        return documento.data().conta || {};
+
+    }
+
+    return {};
+
+};
+
 
 // ==========================
 // SENHA
