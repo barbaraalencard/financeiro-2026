@@ -8,6 +8,8 @@ let despesas = [];
 let receitas = [];
 let metas = [];
 
+let mesesArquivados = [];
+
 let indiceMetaEditando = null;
 let indiceDespesaEditando = null;
 let indiceReceitaEditando = null;
@@ -353,7 +355,14 @@ salvarDespesa.onclick = async () => {
 
     indiceDespesaEditando = null;
 
+    const criouReceitaFixa =
+        aplicarReceitasFixasNosMesesComGastos();
+
     await salvarDespesasFirebase(despesas);
+
+    if(criouReceitaFixa){
+        await salvarReceitasFirebase(receitas);
+    }
 
     atualizarTelas();
 
@@ -378,6 +387,9 @@ salvarReceita.onclick = async () => {
     const data =
         document.getElementById("dataReceita").value;
 
+    const ehReceitaFixa =
+        document.getElementById("receitaFixa")?.checked || false;
+
     if(!descricao || !valor || valor <= 0 || !data){
 
         alert("Preencha descrição, valor e data da receita.");
@@ -387,21 +399,93 @@ salvarReceita.onclick = async () => {
 
     if(indiceReceitaEditando !== null){
 
-        receitas[indiceReceitaEditando] = {
-            descricao,
-            valor,
-            data
-        };
+        const receitaOriginal =
+            receitas[indiceReceitaEditando];
+
+        if(receitaOriginal.grupoReceitaFixa){
+
+            const grupoReceitaFixa =
+                receitaOriginal.grupoReceitaFixa;
+
+            receitas = receitas.filter(
+                item =>
+                    item.grupoReceitaFixa !== grupoReceitaFixa
+            );
+
+            if(ehReceitaFixa){
+
+                criarReceitasFixas({
+                    descricao,
+                    valor,
+                    data,
+                    grupoReceitaFixa
+                });
+
+            } else {
+
+                receitas.push({
+                    descricao,
+                    valor,
+                    data,
+                    receitaFixa: false,
+                    grupoReceitaFixa: null
+                });
+
+            }
+
+        } else {
+
+            receitas[indiceReceitaEditando] = {
+                descricao,
+                valor,
+                data,
+                receitaFixa: ehReceitaFixa,
+                grupoReceitaFixa:
+                    ehReceitaFixa ? Date.now() : null
+            };
+
+            if(ehReceitaFixa){
+
+                const receitaEditada =
+                    receitas[indiceReceitaEditando];
+
+                receitas.splice(indiceReceitaEditando, 1);
+
+                criarReceitasFixas({
+                    descricao: receitaEditada.descricao,
+                    valor: receitaEditada.valor,
+                    data: receitaEditada.data,
+                    grupoReceitaFixa: receitaEditada.grupoReceitaFixa
+                });
+
+            }
+
+        }
 
         indiceReceitaEditando = null;
 
     } else {
 
-        receitas.push({
-            descricao,
-            valor,
-            data
-        });
+        if(ehReceitaFixa){
+
+            criarReceitasFixas({
+                descricao,
+                valor,
+                data,
+                grupoReceitaFixa: Date.now()
+            });
+
+        } else {
+
+            receitas.push({
+                descricao,
+                valor,
+                data,
+                receitaFixa: false,
+                grupoReceitaFixa: null
+            });
+
+        }
 
     }
 
@@ -440,6 +524,7 @@ function limparFormularioReceita(){
     document.getElementById("descricaoReceita").value = "";
     document.getElementById("valorReceita").value = "";
     document.getElementById("dataReceita").value = "";
+    document.getElementById("receitaFixa").checked = false;
 
 }
 
@@ -467,11 +552,236 @@ function obterFiltroStatus(){
 
 function passaFiltroMes(item, filtroMes){
 
+    const mesItem =
+        obterMesAno(item.data);
+
+    if(mesEstaArquivado(mesItem)){
+        return false;
+    }
+
     if(filtroMes === "todos"){
         return true;
     }
 
-    return obterMesAno(item.data) === filtroMes;
+    return mesItem === filtroMes;
+
+}
+
+function mesEstaArquivado(mesAno){
+
+    return mesesArquivados.includes(mesAno);
+
+}
+
+function normalizarMesesArquivados(lista){
+
+    return [
+        ...new Set(
+            (lista || []).filter(Boolean)
+        )
+    ];
+
+}
+
+function obterMesesComRegistros(){
+
+    const meses =
+        new Set();
+
+    despesas.forEach(item => {
+        meses.add(obterMesAno(item.data));
+    });
+
+    receitas.forEach(item => {
+        meses.add(obterMesAno(item.data));
+    });
+
+    return ordenarMesesPorProximidade(
+        [...meses]
+        .filter(Boolean)
+    );
+
+}
+
+function obterMesesParaReceitaFixa(dataReceita){
+
+    const meses =
+        new Set();
+
+    despesas.forEach(item => {
+        meses.add(obterMesAno(item.data));
+    });
+
+    meses.add(
+        obterMesAno(dataReceita)
+    );
+
+    return ordenarMesesPorProximidade(
+        [...meses].filter(Boolean)
+    );
+
+}
+
+function aplicarReceitasFixasNosMesesComGastos(){
+
+    const grupos =
+        new Map();
+
+    receitas.forEach(item => {
+
+        if(item.grupoReceitaFixa && !grupos.has(item.grupoReceitaFixa)){
+            grupos.set(item.grupoReceitaFixa, item);
+        }
+
+    });
+
+    if(grupos.size === 0){
+        return false;
+    }
+
+    const mesesComGastos =
+        new Set();
+
+    despesas.forEach(item => {
+        mesesComGastos.add(obterMesAno(item.data));
+    });
+
+    let criouReceita =
+        false;
+
+    grupos.forEach((receitaBase, grupoReceitaFixa) => {
+
+        mesesComGastos.forEach(mesAno => {
+
+            const jaExiste =
+                receitas.some(item =>
+                    item.grupoReceitaFixa === grupoReceitaFixa &&
+                    obterMesAno(item.data) === mesAno
+                );
+
+            if(jaExiste){
+                return;
+            }
+
+            receitas.push({
+                descricao: receitaBase.descricao,
+                valor: receitaBase.valor,
+                data: criarDataNoMes(mesAno, receitaBase.data),
+                receitaFixa: true,
+                grupoReceitaFixa
+            });
+
+            criouReceita = true;
+
+        });
+
+    });
+
+    return criouReceita;
+
+}
+
+function criarDataNoMes(mesAno, dataReferencia){
+
+    const diaReferencia =
+        Number(dataReferencia.split("-")[2]);
+
+    const [ano, mes] =
+        mesAno.split("-").map(Number);
+
+    const ultimoDiaMes =
+        new Date(ano, mes, 0).getDate();
+
+    const dia =
+        Math.min(diaReferencia, ultimoDiaMes);
+
+    return `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+
+}
+
+function criarReceitasFixas({
+    descricao,
+    valor,
+    data,
+    grupoReceitaFixa
+}){
+
+    const meses =
+        obterMesesParaReceitaFixa(data);
+
+    meses.forEach(mesAno => {
+
+        const jaExiste =
+            receitas.some(item =>
+                item.grupoReceitaFixa === grupoReceitaFixa &&
+                obterMesAno(item.data) === mesAno
+            );
+
+        if(jaExiste){
+            return;
+        }
+
+        receitas.push({
+            descricao,
+            valor,
+            data: criarDataNoMes(mesAno, data),
+            receitaFixa: true,
+            grupoReceitaFixa
+        });
+
+    });
+
+}
+
+function obterMesAtualReferencia(){
+
+    const hoje =
+        new Date();
+
+    return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
+
+}
+
+function calcularDistanciaMes(mesAno){
+
+    const [ano, mes] =
+        mesAno.split("-").map(Number);
+
+    const [anoAtual, mesAtual] =
+        obterMesAtualReferencia()
+            .split("-")
+            .map(Number);
+
+    return (
+        (ano - anoAtual) * 12 +
+        (mes - mesAtual)
+    );
+
+}
+
+function ordenarMesesPorProximidade(meses){
+
+    return meses.sort((mesA, mesB) => {
+
+        const distanciaA =
+            calcularDistanciaMes(mesA);
+
+        const distanciaB =
+            calcularDistanciaMes(mesB);
+
+        const distanciaAbsolutaA =
+            Math.abs(distanciaA);
+
+        const distanciaAbsolutaB =
+            Math.abs(distanciaB);
+
+        if(distanciaAbsolutaA !== distanciaAbsolutaB){
+            return distanciaAbsolutaA - distanciaAbsolutaB;
+        }
+
+        return distanciaB - distanciaA;
+
+    });
 
 }
 
@@ -516,23 +826,59 @@ function nomeMes(mesAno){
 
 }
 
+function nomeMesCurto(mesAno){
+
+    if(mesAno === "todos"){
+        return "Todos";
+    }
+
+    const [ano, mes] =
+        mesAno.split("-");
+
+    const meses = [
+        "Jan",
+        "Fev",
+        "Mar",
+        "Abr",
+        "Mai",
+        "Jun",
+        "Jul",
+        "Ago",
+        "Set",
+        "Out",
+        "Nov",
+        "Dez"
+    ];
+
+    return `${meses[Number(mes) - 1]} ${ano}`;
+
+}
+
+function formatarMoeda(valor){
+
+    return Number(valor).toLocaleString(
+        "pt-BR",
+        {
+            style: "currency",
+            currency: "BRL"
+        }
+    );
+
+}
+
 function atualizarFiltroMes(){
 
     const select =
         document.getElementById("filtroMes");
 
+    const botoesMeses =
+        document.getElementById("botoesMeses");
+
     if(!select) return;
 
     const meses =
-        new Set();
-
-    despesas.forEach(item => {
-        meses.add(obterMesAno(item.data));
-    });
-
-    receitas.forEach(item => {
-        meses.add(obterMesAno(item.data));
-    });
+        obterMesesComRegistros()
+            .filter(mes => !mesEstaArquivado(mes));
 
     const valorAtual =
         select.value;
@@ -543,10 +889,7 @@ function atualizarFiltroMes(){
         </option>
     `;
 
-    [...meses]
-        .filter(Boolean)
-        .sort()
-        .reverse()
+    meses
         .forEach(mes => {
 
             select.innerHTML += `
@@ -557,9 +900,59 @@ function atualizarFiltroMes(){
 
         });
 
-    if(valorAtual){
+    if(
+        valorAtual &&
+        meses.includes(valorAtual) &&
+        !mesEstaArquivado(valorAtual)
+    ){
         select.value = valorAtual;
+    } else {
+        select.value = "todos";
     }
+
+    if(botoesMeses){
+
+        const mesesBotoes =
+            [...meses, "todos"];
+
+        botoesMeses.innerHTML =
+            mesesBotoes.map(mes => {
+
+                const ativo =
+                    select.value === mes ? "ativo" : "";
+
+                const texto =
+                    mes === "todos"
+                        ? "Todos"
+                        : nomeMesCurto(mes);
+
+                return `
+                    <button
+                        type="button"
+                        class="botao-mes ${ativo}"
+                        onclick="selecionarMes('${mes}')">
+                        ${texto}
+                    </button>
+                `;
+
+            }).join("");
+
+    }
+
+}
+
+function selecionarMes(mesAno){
+
+    const select =
+        document.getElementById("filtroMes");
+
+    if(!select){
+        return;
+    }
+
+    select.value = mesAno;
+
+    atualizarTelas();
 
 }
 
@@ -633,36 +1026,35 @@ function renderizar(){
         if(item.tipo === "receita"){
 
             lista.innerHTML += `
-                <div class="meta-financeira">
+                <div class="lancamento-card receita-card">
 
-                    💰 ${item.descricao}
+                    <div class="lancamento-topo">
+                        <div>
+                            <span class="lancamento-tipo">💰 Receita</span>
+                            <strong>${item.descricao || "Sem descrição"}</strong>
+                        </div>
+                        <span class="lancamento-valor positivo">
+                            ${formatarMoeda(item.valor)}
+                        </span>
+                    </div>
 
-                    <br>
+                    <div class="lancamento-detalhes">
+                        <span>📅 ${formatarData(item.data)}</span>
+                    </div>
 
-                    R$ ${Number(item.valor).toLocaleString(
-                        "pt-BR",
-                        {
-                            minimumFractionDigits: 2
-                        }
-                    )}
+                    <div class="acoes-lancamento">
+                        <button
+                            class="btn-editar"
+                            onclick="editarReceita(${item.indice})">
+                            ✏️ Editar
+                        </button>
 
-                    <br>
-
-                    📅 ${formatarData(item.data)}
-
-                    <br><br>
-
-                    <button
-                        class="btn-editar"
-                        onclick="editarReceita(${item.indice})">
-                        ✏️ Editar
-                    </button>
-
-                    <button
-                        class="btn-excluir"
-                        onclick="excluirReceita(${item.indice})">
-                        🗑 Excluir
-                    </button>
+                        <button
+                            class="btn-excluir"
+                            onclick="excluirReceita(${item.indice})">
+                            🗑 Excluir
+                        </button>
+                    </div>
 
                 </div>
             `;
@@ -678,56 +1070,56 @@ function renderizar(){
             ){
 
                 parcelaTexto =
-                    `<br>📦 ${item.parcelaAtual}/${item.totalParcelas}`;
+                    `<span>📦 ${item.parcelaAtual}/${item.totalParcelas}</span>`;
 
             }
 
             lista.innerHTML += `
-                <div class="meta">
+                <div class="lancamento-card despesa-card">
 
-                    💸 ${item.descricao}
+                    <div class="lancamento-topo">
+                        <div>
+                            <span class="lancamento-tipo">💸 Despesa</span>
+                            <strong>${item.descricao || "Sem descrição"}</strong>
+                        </div>
+                        <span class="lancamento-valor negativo">
+                            ${formatarMoeda(item.valor)}
+                        </span>
+                    </div>
 
-                    <br>
+                    <div class="lancamento-detalhes">
+                        <span>🏷️ ${item.categoria || "Outros"}</span>
+                        ${parcelaTexto}
+                        <span>📅 ${formatarData(item.data)}</span>
+                    </div>
 
-                    R$ ${Number(item.valor).toLocaleString(
-                        "pt-BR",
-                        {
-                            minimumFractionDigits: 2
-                        }
-                    )}
-
-                    ${parcelaTexto}
-
-                    <br>
-
-                    📅 ${formatarData(item.data)}
-
-                    ${item.pago ? `
-                        <br>
+                    <div class="lancamento-rodape">
+                        ${item.pago ? `
                         <span class="selo-pago">
                             ✅ Pago
                         </span>
-                    ` : ""}
+                        ` : `<span class="selo-pendente">Pendente</span>`}
+                    </div>
 
-                    <br><br>
+                    <div class="acoes-lancamento">
+                        <button
+                            class="btn-editar"
+                            onclick="editarDespesa(${item.indice})">
+                            ✏️ Editar
+                        </button>
 
-                    <button
-                        class="btn-editar"
-                        onclick="editarDespesa(${item.indice})">
-                        ✏️ Editar
-                    </button>
+                        <button
+                            class="btn-excluir"
+                            onclick="excluirDespesa(${item.indice})">
+                            🗑 Excluir
+                        </button>
 
-                    <button
-                        class="btn-excluir"
-                        onclick="excluirDespesa(${item.indice})">
-                        🗑 Excluir
-                    </button>
-
-                    <button
-                        class="${item.pago ? 'btn-desfazer' : 'btn-pago'}"
-                        onclick="alternarPagamento(${item.indice})">
-                        ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
-                    </button>
+                        <button
+                            class="${item.pago ? 'btn-desfazer' : 'btn-pago'}"
+                            onclick="alternarPagamento(${item.indice})">
+                            ${item.pago ? "↩️ Desfazer" : "✅ Pago"}
+                        </button>
+                    </div>
 
                 </div>
             `;
@@ -815,12 +1207,17 @@ function atualizarResumo(){
 
 function atualizarParcelas(){
 
+    const filtroMes =
+        document.getElementById("filtroMes")?.value || "todos";
+
     const filtroStatus =
         obterFiltroStatus();
 
     let parcelasAtivas =
         despesas.filter(
-            item => item.ehParcelado
+            item =>
+                item.ehParcelado &&
+                passaFiltroMes(item, filtroMes)
         );
 
     if(filtroStatus !== "todos"){
@@ -930,6 +1327,8 @@ function atualizarTelas(){
 
     renderizarParcelas();
 
+    renderizarArquivados();
+
     renderizarMetas();
 
     atualizarResumo();
@@ -955,7 +1354,8 @@ async function salvarTudoFirebase(){
     await Promise.all([
         salvarDespesasFirebase(despesas),
         salvarReceitasFirebase(receitas),
-        salvarMetasFirebase(metas)
+        salvarMetasFirebase(metas),
+        salvarMesesArquivadosFirebase(mesesArquivados)
     ]);
 
 }
@@ -977,12 +1377,16 @@ const paginaReceitas =
 const paginaParcelas =
     document.getElementById("pagina-parcelas");
 
+const paginaArquivados =
+    document.getElementById("pagina-arquivados");
+
 function esconderTudo(){
 
     paginaHome.style.display = "none";
     paginaDespesas.style.display = "none";
     paginaReceitas.style.display = "none";
     paginaParcelas.style.display = "none";
+    paginaArquivados.style.display = "none";
     paginaConfig.style.display = "none";
 
 }
@@ -1016,6 +1420,16 @@ document.getElementById("btnParcelas").onclick = () => {
     esconderTudo();
 
     paginaParcelas.style.display = "block";
+
+};
+
+document.getElementById("btnArquivados").onclick = () => {
+
+    esconderTudo();
+
+    paginaArquivados.style.display = "block";
+
+    renderizarArquivados();
 
 };
 
@@ -1316,6 +1730,9 @@ function editarReceita(indice){
     document.getElementById("dataReceita").value =
         receita.data;
 
+    document.getElementById("receitaFixa").checked =
+        !!receita.grupoReceitaFixa;
+
     indiceReceitaEditando = indice;
 
     modalReceita.style.display = "flex";
@@ -1593,8 +2010,257 @@ function renderizarParcelas(){
 }
 
 // ==========================
+// MESES ARQUIVADOS
+// ==========================
+
+function obterLancamentosDoMes(mesAno){
+
+    const lancamentos =
+        [];
+
+    despesas.forEach((item, indice) => {
+
+        if(obterMesAno(item.data) === mesAno){
+
+            lancamentos.push({
+                tipo: "despesa",
+                indice,
+                ...item
+            });
+
+        }
+
+    });
+
+    receitas.forEach((item, indice) => {
+
+        if(obterMesAno(item.data) === mesAno){
+
+            lancamentos.push({
+                tipo: "receita",
+                indice,
+                ...item
+            });
+
+        }
+
+    });
+
+    return lancamentos.sort(
+        (a, b) =>
+            String(b.data || "")
+                .localeCompare(String(a.data || ""))
+    );
+
+}
+
+function renderizarArquivados(){
+
+    const listaArquivados =
+        document.getElementById("lista-arquivados");
+
+    if(!listaArquivados){
+        return;
+    }
+
+    listaArquivados.innerHTML = "";
+
+    const meses =
+        normalizarMesesArquivados(mesesArquivados)
+            .filter(Boolean)
+            .sort()
+            .reverse();
+
+    if(meses.length === 0){
+
+        listaArquivados.innerHTML = `
+            <div class="meta-financeira">
+                Nenhum mês arquivado ainda.
+            </div>
+        `;
+
+        return;
+
+    }
+
+    meses.forEach(mesAno => {
+
+        const lancamentos =
+            obterLancamentosDoMes(mesAno);
+
+        const totalReceitas =
+            lancamentos
+                .filter(item => item.tipo === "receita")
+                .reduce(
+                    (total, item) =>
+                        total + Number(item.valor),
+                    0
+                );
+
+        const totalDespesas =
+            lancamentos
+                .filter(item => item.tipo === "despesa")
+                .reduce(
+                    (total, item) =>
+                        total + Number(item.valor),
+                    0
+                );
+
+        const saldo =
+            totalReceitas - totalDespesas;
+
+        const itensHtml =
+            lancamentos.length > 0
+                ? lancamentos.map(item => {
+
+                    const valor =
+                        Number(item.valor).toLocaleString(
+                            "pt-BR",
+                            {
+                                style: "currency",
+                                currency: "BRL"
+                            }
+                        );
+
+                    const parcela =
+                        item.tipo === "despesa" &&
+                        item.ehParcelado &&
+                        item.parcelaAtual &&
+                        item.totalParcelas
+                            ? ` - Parcela ${item.parcelaAtual}/${item.totalParcelas}`
+                            : "";
+
+                    const pago =
+                        item.tipo === "despesa" && item.pago
+                            ? " - Pago"
+                            : "";
+
+                    return `
+                        <li>
+                            ${item.tipo === "despesa" ? "💸" : "💰"}
+                            ${item.descricao || "Sem descrição"}
+                            - ${valor}
+                            ${parcela}
+                            ${pago}
+                        </li>
+                    `;
+
+                }).join("")
+                : "<li>Nenhum lançamento encontrado neste mês.</li>";
+
+        listaArquivados.innerHTML += `
+            <div class="meta-financeira mes-arquivado">
+
+                <strong>🗃️ ${nomeMes(mesAno)}</strong>
+
+                <div class="resumo-arquivado">
+                    <span>Receitas: ${totalReceitas.toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</span>
+                    <span>Despesas: ${totalDespesas.toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</span>
+                    <span>Saldo: ${saldo.toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</span>
+                </div>
+
+                <ul class="lista-itens-arquivados">
+                    ${itensHtml}
+                </ul>
+
+                <button
+                    class="btn-editar"
+                    onclick="restaurarMesArquivado('${mesAno}')">
+                    ↩️ Restaurar mês
+                </button>
+
+            </div>
+        `;
+
+    });
+
+}
+
+async function arquivarMesSelecionado(){
+
+    const select =
+        document.getElementById("filtroMes");
+
+    const mesSelecionado =
+        select?.value || "todos";
+
+    if(mesSelecionado === "todos"){
+
+        alert("Selecione um mês específico antes de arquivar.");
+        return;
+
+    }
+
+    if(!obterMesesComRegistros().includes(mesSelecionado)){
+
+        alert("Este mês não possui lançamentos para arquivar.");
+        return;
+
+    }
+
+    if(
+        !confirm(
+            `Arquivar ${nomeMes(mesSelecionado)}? Ele sairá das telas principais e ficará em Meses Arquivados.`
+        )
+    ){
+        return;
+    }
+
+    if(!mesEstaArquivado(mesSelecionado)){
+
+        mesesArquivados.push(mesSelecionado);
+        mesesArquivados =
+            normalizarMesesArquivados(mesesArquivados);
+
+    }
+
+    await salvarMesesArquivadosFirebase(mesesArquivados);
+
+    atualizarTelas();
+
+    alert("Mês arquivado com sucesso!");
+
+}
+
+async function restaurarMesArquivado(mesAno){
+
+    if(
+        !confirm(
+            `Restaurar ${nomeMes(mesAno)} para as telas principais?`
+        )
+    ){
+        return;
+    }
+
+    mesesArquivados =
+        mesesArquivados.filter(
+            mes => mes !== mesAno
+        );
+
+    await salvarMesesArquivadosFirebase(mesesArquivados);
+
+    atualizarTelas();
+
+    alert("Mês restaurado com sucesso!");
+
+}
+
+// ==========================
 // CONFIGURAÇÕES
 // ==========================
+
+document.getElementById("btnArquivarMes")
+.onclick = arquivarMesSelecionado;
+
+const btnArquivarMesHome =
+    document.getElementById("btnArquivarMesHome");
+
+if(btnArquivarMesHome){
+
+    btnArquivarMesHome.onclick =
+        arquivarMesSelecionado;
+
+}
 
 document.getElementById("btnLimparDespesas")
 .onclick = async () => {
@@ -1606,7 +2272,8 @@ document.getElementById("btnLimparDespesas")
     ultimoBackup = {
         despesas: [...despesas],
         receitas: [...receitas],
-        metas: [...metas]
+        metas: [...metas],
+        mesesArquivados: [...mesesArquivados]
     };
 
     despesas = [];
@@ -1627,7 +2294,8 @@ document.getElementById("btnLimparReceitas")
     ultimoBackup = {
         despesas: [...despesas],
         receitas: [...receitas],
-        metas: [...metas]
+        metas: [...metas],
+        mesesArquivados: [...mesesArquivados]
     };
 
     receitas = [];
@@ -1648,7 +2316,8 @@ document.getElementById("btnLimparMetas")
     ultimoBackup = {
         despesas: [...despesas],
         receitas: [...receitas],
-        metas: [...metas]
+        metas: [...metas],
+        mesesArquivados: [...mesesArquivados]
     };
 
     metas = [];
@@ -1672,6 +2341,10 @@ document.getElementById("btnDesfazer")
     despesas = ultimoBackup.despesas;
     receitas = ultimoBackup.receitas;
     metas = ultimoBackup.metas;
+    mesesArquivados =
+        normalizarMesesArquivados(
+            ultimoBackup.mesesArquivados || []
+        );
 
     await salvarTudoFirebase();
 
@@ -1687,7 +2360,8 @@ document.getElementById("btnExportar")
     const backup = {
         despesas,
         receitas,
-        metas
+        metas,
+        mesesArquivados
     };
 
     const blob = new Blob(
@@ -1756,6 +2430,10 @@ document.getElementById("arquivoBackup")
             despesas = backup.despesas;
             receitas = backup.receitas;
             metas = backup.metas;
+            mesesArquivados =
+                normalizarMesesArquivados(
+                    backup.mesesArquivados || []
+                );
 
             await salvarTudoFirebase();
 
@@ -1970,6 +2648,11 @@ async function carregarDadosFirebase(){
 
         metas =
             await carregarMetasFirebase();
+
+        mesesArquivados =
+            normalizarMesesArquivados(
+                await carregarMesesArquivadosFirebase()
+            );
 
     } catch(erro){
 

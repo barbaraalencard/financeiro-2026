@@ -84,6 +84,7 @@ header h1{
     background:white;
     display:flex;
     justify-content:space-around;
+    gap:6px;
     padding:15px;
     box-shadow:0 -2px 10px rgba(0,0,0,.08);
 }
@@ -92,6 +93,7 @@ header h1{
     border:none;
     background:none;
     font-size:1.5rem;
+    min-width:36px;
     cursor:pointer;
 }
 
@@ -234,7 +236,7 @@ body{
 #lista-lancamentos{
     display:flex;
     flex-direction:column;
-    gap:10px;
+    gap:12px;
 }
 
 
@@ -673,6 +675,58 @@ body.tema-escuro .modal-content{
 }
 
 /* ==========================
+   MESES ARQUIVADOS
+========================== */
+
+.mes-arquivado{
+
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+
+}
+
+.resumo-arquivado{
+
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+
+}
+
+.resumo-arquivado span{
+
+    background:#FAF7F2;
+    padding:10px;
+    border-radius:10px;
+    font-weight:700;
+
+}
+
+.lista-itens-arquivados{
+
+    padding-left:20px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+
+}
+
+body.tema-escuro .resumo-arquivado span{
+
+    background:#1f1f1f;
+
+}
+
+@media(min-width:768px){
+
+    .resumo-arquivado{
+        grid-template-columns:repeat(3, 1fr);
+    }
+
+}
+
+/* ==========================
    FILTROS MÊS / STATUS
 ========================== */
 
@@ -690,6 +744,12 @@ body.tema-escuro .modal-content{
     align-items:center;
     gap:10px;
     margin:0;
+}
+
+.filtro-mes{
+    flex:1;
+    min-width:100%;
+    align-items:flex-start;
 }
 
 .filtro-mes label,
@@ -724,9 +784,209 @@ body.tema-escuro .modal-content{
 }
 
 #filtroMes{
-    min-width:170px;
+    display:none;
 }
 
 #filtroStatus{
     min-width:140px;
+}
+
+.botoes-meses{
+    display:flex;
+    gap:14px;
+    flex:1;
+    overflow-x:auto;
+    padding:4px 2px 12px;
+    scrollbar-width:thin;
+}
+
+.botao-mes{
+    flex:0 0 auto;
+    border:none;
+    border-radius:18px;
+    background:white;
+    color:#12345a;
+    min-height:58px;
+    padding:0 26px;
+    font-family:'Nunito', sans-serif;
+    font-size:1rem;
+    font-weight:800;
+    cursor:pointer;
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+    transition:.2s;
+}
+
+.botao-mes:hover{
+    transform:translateY(-2px);
+}
+
+.botao-mes.ativo{
+    background:#0F4C8F;
+    color:white;
+}
+
+.btn-arquivar-home{
+    flex:0 0 auto;
+    border:none;
+    border-radius:18px;
+    background:#FFF4D6;
+    color:#6b5300;
+    min-height:58px;
+    padding:0 22px;
+    font-family:'Nunito', sans-serif;
+    font-size:1rem;
+    font-weight:900;
+    cursor:pointer;
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+    transition:.2s;
+    white-space:nowrap;
+}
+
+.btn-arquivar-home:hover{
+    transform:translateY(-2px);
+}
+
+.lancamento-card{
+    background:white;
+    padding:16px;
+    border-radius:16px;
+    box-shadow:0 4px 14px rgba(0,0,0,.07);
+    border-left:6px solid #D8D0F0;
+}
+
+.lancamento-card.receita-card{
+    border-left-color:#88B58A;
+}
+
+.lancamento-card.despesa-card{
+    border-left-color:#D98196;
+}
+
+.lancamento-topo{
+    display:flex;
+    justify-content:space-between;
+    gap:14px;
+    align-items:flex-start;
+}
+
+.lancamento-topo strong{
+    display:block;
+    margin-top:4px;
+    font-size:1.05rem;
+    color:#4b4542;
+}
+
+.lancamento-tipo{
+    display:inline-block;
+    font-size:.82rem;
+    font-weight:800;
+    color:#7a716b;
+}
+
+.lancamento-valor{
+    white-space:nowrap;
+    font-size:1.1rem;
+    font-weight:900;
+}
+
+.lancamento-valor.positivo{
+    color:#2f7b45;
+}
+
+.lancamento-valor.negativo{
+    color:#b54459;
+}
+
+.lancamento-detalhes{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+}
+
+.lancamento-detalhes span{
+    background:#FAF7F2;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:.9rem;
+    font-weight:700;
+}
+
+.lancamento-rodape{
+    margin-top:10px;
+}
+
+.selo-pendente{
+    display:inline-block;
+    padding:4px 10px;
+    background:#fff4d6;
+    color:#7a5a00;
+    border-radius:999px;
+    font-size:.9rem;
+    font-weight:800;
+}
+
+.acoes-lancamento{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+}
+
+.acoes-lancamento button{
+    margin-left:0;
+}
+
+body.tema-escuro .botao-mes{
+    background:#2d2d2d;
+    color:#f5f5f5;
+}
+
+body.tema-escuro .botao-mes.ativo{
+    background:#0F4C8F;
+    color:white;
+}
+
+body.tema-escuro .btn-arquivar-home{
+    background:#4a3d18;
+    color:#ffe9a8;
+}
+
+body.tema-escuro .lancamento-card{
+    background:#2d2d2d;
+    color:white;
+}
+
+body.tema-escuro .lancamento-topo strong{
+    color:white;
+}
+
+body.tema-escuro .lancamento-detalhes span{
+    background:#1f1f1f;
+}
+
+@media(max-width:640px){
+
+    .barra-filtros{
+        gap:16px;
+    }
+
+    .botao-mes{
+        min-height:52px;
+        padding:0 20px;
+    }
+
+    .btn-arquivar-home{
+        width:100%;
+        min-height:52px;
+    }
+
+    .lancamento-topo{
+        flex-direction:column;
+    }
+
+    .lancamento-valor{
+        white-space:normal;
+    }
+
 }

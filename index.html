@@ -110,9 +110,17 @@
 
     <div class="filtro-mes">
 
-        <label for="filtroMes">
-            📅 Mês:
-        </label>
+        <div
+            id="botoesMeses"
+            class="botoes-meses"
+            aria-label="Selecionar mês">
+        </div>
+
+        <button
+            id="btnArquivarMesHome"
+            class="btn-arquivar-home">
+            🗃️ Arquivar dados
+        </button>
 
         <select id="filtroMes">
             <option value="todos">Todos os meses</option>
@@ -206,6 +214,10 @@
             ↩️ Desfazer última limpeza
         </button>
 
+        <button id="btnArquivarMes" class="btn-config">
+            🗃️ Arquivar mês selecionado
+        </button>
+
         <button id="btnExportar" class="btn-config">
             📤 Exportar Backup
         </button>
@@ -244,6 +256,17 @@
 
 </section>
 
+
+<!-- MESES ARQUIVADOS -->
+
+<section id="pagina-arquivados" style="display:none;">
+
+    <h2 class="titulo-aba">🗃️ Meses Arquivados</h2>
+
+    <div id="lista-arquivados" class="grid-lancamentos"></div>
+
+</section>
+
 </main>
 
 <nav class="menu">
@@ -251,6 +274,7 @@
 <button id="btnDespesas">💸</button>
 <button id="btnReceitas">💰</button>
 <button id="btnParcelas">📦</button>
+<button id="btnArquivados">🗃️</button>
 <button id="btnConfig">⚙️</button>
 </nav>
 
@@ -353,6 +377,11 @@
         <input
             type="date"
             id="dataReceita">
+
+        <label>
+            <input type="checkbox" id="receitaFixa">
+            Receita fixa
+        </label>
 
         <div class="acoes-modal">
     <button id="cancelarReceita" class="btn-cancelar">

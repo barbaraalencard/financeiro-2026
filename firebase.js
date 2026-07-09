@@ -36,6 +36,14 @@ const app =
 const db =
     getFirestore(app);
 
+function limparUndefined(obj){
+
+    return JSON.parse(
+        JSON.stringify(obj)
+    );
+
+}
+
 window.db = db;
 window.doc = doc;
 window.getDoc = getDoc;
@@ -135,6 +143,41 @@ window.carregarReceitasFirebase = async function(){
     if(documento.exists()){
 
         return documento.data().receitas || [];
+
+    }
+
+    return [];
+
+};
+
+// ==========================
+// MESES ARQUIVADOS
+// ==========================
+
+window.salvarMesesArquivadosFirebase = async function(mesesArquivados){
+
+    await setDoc(
+        doc(db, "usuarios", "babi"),
+        {
+            mesesArquivados: limparUndefined(mesesArquivados)
+        },
+        {
+            merge: true
+        }
+    );
+
+};
+
+window.carregarMesesArquivadosFirebase = async function(){
+
+    const documento =
+        await getDoc(
+            doc(db, "usuarios", "babi")
+        );
+
+    if(documento.exists()){
+
+        return documento.data().mesesArquivados || [];
 
     }
 
