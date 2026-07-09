@@ -795,6 +795,7 @@ body.tema-escuro .resumo-arquivado span{
     display:flex;
     gap:14px;
     flex:1;
+    min-width:0;
     overflow-x:auto;
     padding:4px 2px 12px;
     scrollbar-width:thin;
@@ -969,6 +970,17 @@ body.tema-escuro .lancamento-detalhes span{
 
     .barra-filtros{
         gap:16px;
+    }
+
+    .filtro-mes{
+        flex-direction:column;
+        width:100%;
+    }
+
+    .botoes-meses{
+        width:100%;
+        max-width:100%;
+        flex:none;
     }
 
     .botao-mes{
